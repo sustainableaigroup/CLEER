@@ -9,7 +9,7 @@ This repository uses separate licenses for software and data:
   [Creative Commons Attribution-NonCommercial 4.0 International License](data/LICENSE).
 
 Commercial use of the data requires separate written permission from
-Sustainable AI Group.
+[Sustainable AI Group](https://sustainableaigroup.com/).
 
 Unless explicitly stated otherwise, documentation and other repository content
 are licensed under the Apache License 2.0.

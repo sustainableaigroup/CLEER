@@ -1,0 +1,5 @@
+/* Self-hosted Google Fonts; each family is licensed under the SIL Open Font License 1.1. */
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 600;font-display:swap;src:url('./inter-latin.woff2') format('woff2');}
+@font-face{font-family:'DM Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url('./dm-sans-latin.woff2') format('woff2');}
+@font-face{font-family:'DM Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./dm-mono-400-latin.woff2') format('woff2');}
+@font-face{font-family:'DM Mono';font-style:normal;font-weight:500;font-display:swap;src:url('./dm-mono-500-latin.woff2') format('woff2');}

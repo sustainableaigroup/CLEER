@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-09-09",
+  "methodology": {
+    "engine": "CLEER-Text-0826",
+    "accounting": "Closed-AI-Inference-Emissions-Methodology-0826",
+    "capability_and_cost_source": "Artificial Analysis",
+    "capability_and_cost_snapshot": "2026-09"
+  },
+  "scenario": {
+    "grid": "behind-the-meter gas",
+    "grid_gco2e_per_kwh": 730,
+    "facility": "US-average data center",
+    "note": "One documented scenario. The methodology supports alternatives."
+  },
+  "counts": {
+    "models": 52,
+    "closed": 36,
+    "open": 16,
+    "workloads": 6
+  },
+  "sha256": "1353567a010e834552bb38e5f819b20057122ab97fe41cb5d27fc239697a24fc",
+  "license": {
+    "data": "CC BY-NC 4.0",
+    "code": "Apache-2.0",
+    "methodology": "CC BY 4.0"
+  }
+}

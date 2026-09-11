@@ -371,6 +371,109 @@
   .retry-btn{margin-top:4px;border:1px solid var(--ink);border-radius:7px;background:var(--ink);color:#fff;padding:9px 15px;font:600 13px/1 'DM Sans',sans-serif;cursor:pointer;}
   .retry-btn:hover{opacity:.86;}
   @keyframes data-spin{to{transform:rotate(360deg);}}
+    .cx-body {
+    padding: 24px;
+  }
+  
+  .cx-lead {
+    max-width: 900px;
+    margin: 0 0 22px;
+    font-size: 1.08rem;
+    line-height: 1.65;
+  }
+  
+  .cx-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0 0 26px;
+  }
+  
+  .cx-stat {
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--cream);
+  }
+  
+  .cx-stat strong {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--ocean);
+    font-size: 1.12rem;
+    line-height: 1.25;
+  }
+  
+  .cx-stat span {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+  
+  .cx-sections {
+    display: grid;
+    gap: 22px;
+  }
+  
+  .cx-section h4 {
+    margin: 0 0 7px;
+    color: var(--ocean);
+    font-size: 1rem;
+  }
+  
+  .cx-section p {
+    max-width: 920px;
+    margin: 0;
+    line-height: 1.65;
+  }
+  
+  .cx-section p + p {
+    margin-top: 9px;
+  }
+  
+  .cx-source {
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
+  
+  .cx-callout {
+    max-width: 920px;
+    margin-top: 12px;
+    padding: 15px 17px;
+    border-left: 4px solid var(--amber);
+    border-radius: 0 8px 8px 0;
+    background: var(--accent-tint);
+    line-height: 1.55;
+  }
+  
+  .cx-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 25px;
+    padding-top: 17px;
+    border-top: 1px solid var(--line);
+    font-weight: 600;
+  }
+  
+  .cx-body a {
+    color: var(--orange);
+  }
+  
+  @media (max-width: 720px) {
+    .cx-stats {
+      grid-template-columns: 1fr;
+    }
+  
+    .cx-footer {
+      display: block;
+    }
+  
+    .cx-footer a {
+      display: block;
+      margin-top: 5px;
+    }
+  }
 </style>
 </head>
 <body class="m-energy">

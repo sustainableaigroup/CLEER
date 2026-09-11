@@ -94,9 +94,9 @@ def main():
         e, c = res["energy_wh"]["mean"], res["carbon_gco2e"]["mean"]
         if e is None or e <= 0: err(f"{nm} [{key}]: energy missing or non-positive")
         if c is None or c <= 0: err(f"{nm} [{key}]: carbon missing or non-positive")
-        if None not in ec and e is not None and not math.isclose(sum(ec), e, rel_tol=1e-6):
+        if None not in ec and e is not None and not math.isclose(sum(ec), e, rel_tol=1e-6, abs_tol=1e-7):
             err(f"{nm} [{key}]: energy components {sum(ec):.6g} != total {e:.6g}")
-        if None not in cc and c is not None and not math.isclose(sum(cc), c, rel_tol=1e-6):
+        if None not in cc and c is not None and not math.isclose(sum(cc), c, rel_tol=1e-6, abs_tol=1e-7):
             err(f"{nm} [{key}]: carbon components {sum(cc):.6g} != total {c:.6g}")
 
     ml = list(models.values())

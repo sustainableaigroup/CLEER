@@ -412,7 +412,7 @@
       <p>A model's accelerator energy is only part of a data center's energy use. Reported figures account for the host server, provisioned-but-idle capacity, and cooling and power distribution. These factors vary by operator and site. The methodology can accommodate different assumptions for each; this dashboard shows 1 documented scenario. → <a href="#">Emissions methodology</a></p>
 
       <h4>Carbon</h4>
-      <p>Carbon emissions depend on how and where electricity is generated, with results varying by more than 10× across plausible grids. The methodology is designed to work across different energy and emissions assumptions; the dashboard shows 1 scenario: <b>behind-the-meter gas generation at 730 gCO₂e/kWh</b>, used in place of location-specific grid data, together with US-average facility efficiency and embodied emissions from hardware and data center construction. Different grid assumptions can produce substantially different results. → <a href="#">Emissions methodology</a></p>
+      <p>Carbon emissions depend on how and where electricity is generated, with results varying by more than 10× across plausible grids. The methodology is designed to work across different energy and emissions assumptions; the dashboard shows 1 scenario: <b>behind-the-meter gas generation at 640 gCO₂e/kWh</b>, used in place of location-specific grid data, together with US-average facility efficiency and embodied emissions from hardware and data center construction. Different grid assumptions can produce substantially different results. → <a href="#">Emissions methodology</a></p>
     </div>
   </details>
 
@@ -675,7 +675,7 @@ const METHLINK=`<div class="mlink">Factors and sources: <a href="#">Closed AI In
 const FEED=`<div class="gated"><b>CLEER Feed</b>Per-token intensity factors for carbon accounting and engineering telemetry integration. API access coming soon. <a href="#">Reach out →</a></div>`;
 const SCEN={
   energy:`<div class="scen"><b>PUE</b> (power usage effectiveness) is the ratio of total facility electricity to the electricity reaching the IT equipment — everything spent on cooling and power distribution. These figures use a <b>US-average data center</b> for reference. Efficiency varies widely by operator and site, and the methodology accommodates site-specific values.</div>`,
-  carbon:`<div class="scen">This is <b>1 scenario shown for reference</b>: <b>behind-the-meter gas generation at 730 gCO₂e/kWh</b> in place of location-specific grid data, a US-average data center, and embodied emissions from hardware and construction. Carbon varies by more than 10× across plausible grids, and the methodology is built to take any energy and emissions assumptions.</div>`
+  carbon:`<div class="scen">This is <b>1 scenario shown for reference</b>: <b>behind-the-meter gas generation at 640 gCO₂e/kWh</b> in place of location-specific grid data, a US-average data center, and embodied emissions from hardware and construction. Carbon varies by more than 10× across plausible grids, and the methodology is built to take any energy and emissions assumptions.</div>`
 };
 function breakdown(x){
   const k=M(), tot=x.comp.reduce((a,b)=>a+b,0);

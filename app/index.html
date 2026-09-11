@@ -382,8 +382,8 @@
     <div class="head-meta">
       <b>Last Updated:</b> <span id="lastUpdated">Loading…</span><br>
       <a href="#" title="Thank you to our supporters!">Acknowledgements ↗</a><br>
-      <a href="#" title="Technical report behind the accelerator energy estimates">CLEER Technical Report ↗</a><br>
-      <a href="#" title="From accelerator energy to carbon">AI Emissions Methodology ↗</a><br>
+      <a href="#" title="Technical report behind the accelerator energy estimates">CLEER Tech. Report ↗</a>
+      <a href="#" title="From accelerator energy to carbon">Emissions Methodology ↗</a><br>
       <a href="#" title="Data available on GitHub">GitHub ↗</a>
     </div>
   </div>
@@ -400,26 +400,87 @@
   </div>
 
   <details class="cleer-x">
-    <summary>More info</summary>
-    <div class="cx-body">
-      <p class="cx-lead">This dashboard presents a new methodology for understanding the environmental impact of closed AI models. It combines the latest peer-reviewed science, new empirical testing across 1,700+ tests and 230 million generated tokens, and real-world application to corporate carbon inventories.</p>
+  <summary>How to interpret this dashboard</summary>
 
-      <h4>CLEER at the core</h4>
-      <p><b>CLEER</b> (Closed-model Latent Energy Estimation Range) estimates per-token energy for proprietary models, where direct measurement is not possible. We benchmark open models on known hardware, match each closed model to the closest open proxies based on observed speed and behaviour, then project onto those measured power curves. → <a href="#">HHAI</a></p>
+  <div class="cx-body">
+    <p class="cx-lead">
+      This dashboard applies <b>CLEER</b>, a new methodology for estimating the
+      environmental impact of proprietary AI models. It combines peer-reviewed
+      research, large-scale empirical testing, and practical application to
+      corporate emissions inventories.
+    </p>
 
-      <h4>Use case</h4>
-      <p>CLEER estimates energy per token, the unit used in a real inventory. → <a href="#">Reach out</a> for per-token factors.</p>
-      <p>Because tokens are difficult to interpret, this dashboard reports whole sessions. The 2 profiles draw on public production data: chat uses ShareChat conversations and Qwen-Bailian serving traces; agentic uses AgentX, a corpus of real coding-agent sessions. Every model receives the same workload, so the differences shown reflect the model, not usage.</p>
-      <p><b>Verbosity differs between models.</b> Asked the same question, models generate different numbers of tokens, and a more verbose model uses more energy in practice. This dashboard holds token counts constant across every model so the comparison isolates per-token energy. Real-world totals will differ by how much a model tends to write.</p>
+    <div class="cx-stats" aria-label="CLEER testing coverage">
+      <div class="cx-stat">
+        <strong>1,700+</strong>
+        <span>test runs</span>
+      </div>
 
-      <h4>From chip to facility</h4>
-      <p>A model's accelerator energy is only part of a data center's energy use. Reported figures account for the host server, provisioned-but-idle capacity, and cooling and power distribution. These factors vary by operator and site. The methodology can accommodate different assumptions for each; this dashboard shows 1 documented scenario. → <a href="#">Emissions methodology</a></p>
+      <div class="cx-stat">
+        <strong>230 million</strong>
+        <span>tokens generated</span>
+      </div>
 
-      <h4>Carbon</h4>
-      <p>Carbon emissions depend on how and where electricity is generated, with results varying by more than 10× across plausible grids. The methodology is designed to work across different energy and emissions assumptions; the dashboard shows 1 scenario: <b>behind-the-meter gas generation at 640 gCO₂e/kWh</b>, used in place of location-specific grid data, together with US-average facility efficiency and embodied emissions from hardware and data center construction. Different grid assumptions can produce substantially different results. → <a href="#">Emissions methodology</a></p>
+      <div class="cx-stat">
+        <strong>Largest to date</strong>
+        <span>open-model energy test we are aware of</span>
+      </div>
     </div>
-  </details>
 
+    <div class="cx-sections">
+      <section class="cx-section">
+        <h4>How CLEER works</h4>
+        <p>
+          <b>CLEER</b> (Closed-model Latent Energy Estimation Range) estimates
+          per-token energy for models that cannot be measured directly. It
+          benchmarks open models on known hardware, matches proprietary models
+          to the closest proxies based on observed performance, and projects
+          their energy use onto measured power curves.
+          <a href="#">Read about the underlying research →</a>
+        </p>
+      </section>
+
+      <section class="cx-section">
+        <h4>What the comparisons show</h4>
+        <p>
+          The dashboard translates per-token estimates into representative
+          <b>chat</b> and <b>agentic</b> sessions derived from public production
+          datasets. Every model receives the same token workload, so differences
+          primarily reflect energy intensity rather than how verbose each model
+          tends to be. Actual results will also depend on the number of tokens a
+          model generates in practice.
+        </p>
+        <p class="cx-source">
+          Workload sources: ShareChat conversations, Qwen serving traces,
+          and AgentX coding-agent sessions.
+        </p>
+      </section>
+
+      <section class="cx-section">
+        <h4>From energy to emissions</h4>
+        <p>
+          Results include accelerator and host-server energy,
+          idle capacity, cooling and power distribution, and
+          embodied emissions from hardware and data center construction.
+        </p>
+
+        <div class="cx-callout">
+          <b>Scenario shown:</b> behind-the-meter gas generation at
+          <b>640 gCO₂e/kWh</b>, combined with US-average facility assumptions.
+          Carbon results can vary by more than 10× across plausible electricity
+          sources; CLEER can be applied using different energy and emissions
+          assumptions.
+          <a href="#">See the emissions methodology →</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="cx-footer">
+      <span>Need per-token factors for an inventory?</span>
+      <a href="#">Contact us →</a>
+    </div>
+  </div>
+</details>
   <div class="work">
     <div>
       <span class="wl">Use case</span>
@@ -470,8 +531,8 @@
   </p>
 
   <div class="foot">
-    <span>AI inference · text · <b>CLEER-Text-0826</b> · <a href="#">methodology</a></span>
-    <span>central estimate ± 1 standard deviation · not for systematic accounting</span>
+    <span>AI inference · text · <b>CLEER-Text-0926</b> · <a href="#">methodology</a></span>
+    <span>central estimate ± 1 standard deviation</span>
   </div>
 </div>
 
@@ -675,7 +736,7 @@ function rowHTML(m,rank,c){
       <span class="rchev">${open?'▴':'▾'}</span>
     </button>${open?detail(m,x):""}</div>`;
 }
-const METHLINK=`<div class="mlink">Factors and sources: <a href="#">Closed AI Inference Emissions Methodology-0826 ↗</a></div>`;
+const METHLINK=`<div class="mlink">Factors and sources: <a href="#">Closed AI Inference Emissions Methodology-0926 ↗</a></div>`;
 const FEED=`<div class="gated"><b>CLEER Feed</b>Per-token intensity factors for carbon accounting and engineering telemetry integration. API access coming soon. <a href="#">Reach out →</a></div>`;
 const SCEN={
   energy:`<div class="scen"><b>PUE</b> (power usage effectiveness) is the ratio of total facility electricity to the electricity reaching the IT equipment — everything spent on cooling and power distribution. These figures use a <b>US-average data center</b> for reference. Efficiency varies widely by operator and site, and the methodology accommodates site-specific values.</div>`,
@@ -817,7 +878,7 @@ function renderChart(){
       <svg class="chart" id="chSvg" viewBox="0 0 840 500" role="img" aria-label="Model comparison chart"></svg>
       <div class="ch-legend" id="chLegend"></div>
       <div class="ch-foot">${LOGO_HTML}
-        <div class="meta"><b>sustainableaigroup.com</b> · CLEER-Text-0826<br>
+        <div class="meta"><b>sustainableaigroup.com</b> · CLEER-Text-0926<br>
         Plotted values are central estimates. Reported figures carry a standard deviation — see CLEER for full detail.</div></div>
     </div>
     <div class="ch-panel">
@@ -991,7 +1052,7 @@ function cmpCard(a,b,ctx){
     <div class="cmp-verdict"><div class="cmp-big ${cls}">${hero}</div><div class="vsub">${sub}</div>
       <div class="cmp-mult">${fmt(a.x.v)} → ${fmt(b.x.v)} ${U}</div></div>
     <div class="cmp-models">${row(a,!ov&&!up)}${row(b,!ov&&up)}</div>
-    <div class="cmp-foot"><span><b>CLEER-Text-0826</b></span><span>sustainableaigroup.com</span></div></div>`;
+    <div class="cmp-foot"><span><b>CLEER-Text-0926</b></span><span>sustainableaigroup.com</span></div></div>`;
 }
 function shareImg(id,name){const el=document.getElementById(id);
   if(!el||typeof html2canvas==="undefined")return;

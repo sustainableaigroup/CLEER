@@ -10,8 +10,8 @@ Run in CI on every PR. A non-zero exit blocks the deploy.
 import sys, csv, json, math, hashlib, datetime, os, re
 
 SCHEMA = "1.0.0"
-ENGINE = "CLEER-Text-0826"
-ACCOUNTING = "Closed-AI-Inference-Emissions-Methodology-0826"
+ENGINE = "CLEER-Text-0926"
+ACCOUNTING = "Closed-AI-Emissions-Methodology-0926"
 AA_SNAPSHOT = "2026-09"
 BATCHES = [32, 64, 128, 256, 384]
 OUT_DIR = os.path.join("data", "v1")
@@ -148,7 +148,7 @@ def main():
         "methodology": {"engine": ENGINE, "accounting": ACCOUNTING,
                         "capability_and_cost_source": "Artificial Analysis",
                         "capability_and_cost_snapshot": AA_SNAPSHOT},
-        "scenario": {"grid": "behind-the-meter gas", "grid_gco2e_per_kwh": 730,
+        "scenario": {"grid": "behind-the-meter gas", "grid_gco2e_per_kwh": 640,
                      "facility": "US-average data center",
                      "note": "One documented scenario. The methodology supports alternatives."},
         "batchSizes": BATCHES,

@@ -660,7 +660,7 @@
 
 </div>
 
-<script src="/app/vendor/html2canvas.min.js"></script>
+<script src="/vendor/html2canvas.min.js"></script>
 
 <script>
 "use strict";
@@ -1340,18 +1340,48 @@ function cmpCard(a,b,ctx){
     <div class="cmp-models">${row(a,!ov&&!up)}${row(b,!ov&&up)}</div>
     <div class="cmp-foot"><span><b>CLEER-Text-0926</b></span><span>sustainableaigroup.com</span></div></div>`;
 }
-function shareImg(id,name){const el=document.getElementById(id);
-  if(!el||typeof html2canvas==="undefined")return;
-  html2canvas(el,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false})
-    .then(c=>{const a=document.createElement("a");a.download=name;a.href=c.toDataURL("image/png");a.click();});}
-function wireList(){
-  view.querySelectorAll(".row-head").forEach(b=>b.addEventListener("click",()=>{
-    const n=b.closest(".row").dataset.m; state.open=state.open===n?null:n; render();}));
-  view.querySelectorAll(".chip[data-sk]").forEach(b=>b.addEventListener("click",()=>{
-    const k=b.dataset.sk;
-    if(state.sortKey===k) state.sortDir=state.sortDir==="asc"?"desc":"asc";
-    else{state.sortKey=k; state.sortDir=(k==="value"||k==="name"||k==="cost")?"asc":"desc";}
-    render();}));
+async function shareImg(id, name) {
+  const el = document.getElementById(id);
+
+  if (!el) {
+    console.error(`Download failed: #${id} was not found.`);
+    return;
+  }
+
+  if (typeof html2canvas === "undefined") {
+    console.error("Download failed: html2canvas did not load.");
+    alert("The image-export library could not be loaded. Please refresh and try again.");
+    return;
+  }
+
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false
+    });
+
+    canvas.toBlob(blob => {
+      if (!blob) {
+        throw new Error("The dashboard could not generate the image.");
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  } catch (error) {
+    console.error("Image download failed:", error);
+    alert("The image could not be generated. Please refresh and try again.");
+  }
 }
 $("#mword").addEventListener("click",()=>{const w=$("#mword");w.classList.add("swap");
   setTimeout(()=>{state.metric=state.metric==="energy"?"carbon":"energy";render();w.classList.remove("swap");},200);});

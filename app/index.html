@@ -1383,6 +1383,35 @@ async function shareImg(id, name) {
     alert("The image could not be generated. Please refresh and try again.");
   }
 }
+function wireList() {
+  view.querySelectorAll(".row-head").forEach(button => {
+    button.addEventListener("click", () => {
+      const name = button.closest(".row").dataset.m;
+      state.open = state.open === name ? null : name;
+      render();
+    });
+  });
+
+  view.querySelectorAll(".chip[data-sk]").forEach(button => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.sk;
+
+      if (state.sortKey === key) {
+        state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+      } else {
+        state.sortKey = key;
+        state.sortDir =
+          key === "value" ||
+          key === "name" ||
+          key === "cost"
+            ? "asc"
+            : "desc";
+      }
+
+      render();
+    });
+  });
+}
 $("#mword").addEventListener("click",()=>{const w=$("#mword");w.classList.add("swap");
   setTimeout(()=>{state.metric=state.metric==="energy"?"carbon":"energy";render();w.classList.remove("swap");},200);});
 $("#mtog").addEventListener("click",e=>{const b=e.target.closest("button[data-metric]");

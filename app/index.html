@@ -775,7 +775,7 @@ const METRICS={
 };
 const TIERS=["light","typical","heavy"];
 const state={metric:"energy",view:"list",uc:"agentic",tier:"typical",provider:"all",q:"",
-  sortKey:"release",sortDir:"desc",showClosed:true,showOpen:true,open:null,
+  sortKey:"value",sortDir:"desc",showClosed:true,showOpen:true,open:null,
   cmpMode:"models",cmpA:"Claude Haiku 4.5",cmpB:"Claude Opus 4.7",cmpW:"chat.typical",
   chX:"cost",chColour:"provider",chFront:true,chLog:true};
 const $=s=>document.querySelector(s), view=$("#view"), tip=$("#tip");
@@ -856,6 +856,9 @@ function render(){
   $("#prov-row").style.display=cmpV?"none":"";
   $("#show-grp").style.display=cmpV?"none":"";
   $("#search-grp").style.display=cmpV?"none":"";
+  $("#vList").setAttribute("aria-pressed",state.view==="list");
+  $("#vChart").setAttribute("aria-pressed",state.view==="chart");
+  $("#vCmp").setAttribute("aria-pressed",state.view==="compare");
   if(state.view==="compare") renderCompare();
   else if(state.view==="chart") renderChart();
   else renderList();
@@ -864,8 +867,8 @@ function renderList(){
   const list=visible(); let c=0;
   list.forEach(m=>{const x=val(m); c=Math.max(c,x.v+(x.sd||0));}); c*=1.04;
   const U=M().unit;
-  const KEYS=[["value",U],["cost","cost"],["intel","intelligence"],["release","release date"],["name","name"]];
-  const HEAD={value:"ranked by "+state.metric,cost:"ranked by cost",intel:"ranked by intelligence",
+  const KEYS=[["value",U],["cost","cost"],["intel","performance"],["release","release date"],["name","name"]];
+  const HEAD={value:"ranked by "+state.metric,cost:"ranked by cost",intel:"ranked by performance",
     release:"by release date",name:"by name"};
   const arrow=state.sortDir==="asc"?"↑":"↓";
   view.innerHTML=`<div class="listhead">
@@ -894,10 +897,10 @@ function rowHTML(m,rank,c){
       <span class="rchev">${open?'▴':'▾'}</span>
     </button>${open?detail(m,x):""}</div>`;
 }
-const METHLINK=`<div class="mlink">Factors and sources: <a href="#">Closed AI Inference Emissions Methodology-0926 ↗</a></div>`;
+const METHLINK=`<div class="mlink">Factors and sources: <a href="#">Closed AI Emissions Calculation-0926 ↗</a></div>`;
 const FEED=`<div class="gated"><b>CLEER Feed</b>Per-token intensity factors for carbon accounting and engineering telemetry integration. API access coming soon. <a href="#">Reach out →</a></div>`;
 const SCEN={
-  energy:`<div class="scen"><b>PUE</b> (power usage effectiveness) is the ratio of total facility electricity to the electricity reaching the IT equipment — everything spent on cooling and power distribution. These figures use a <b>US-average data center</b> for reference. Efficiency varies widely by operator and site, and the methodology accommodates site-specific values.</div>`,
+  energy:`<div class="scen"><b>CLEER estimates accelerator energy</b> for each model. The remaining components are added using defensible assumptions drawn from the latest research, standards, and established methodologies. Facility overhead is calculated using <b>PUE</b> (power usage effectiveness), with a <b>US-average data center</b> used for this dashboard. These factors vary by operator and site, and the calculation can accommodate site-specific details.</div>`,
   carbon:`<div class="scen">This is <b>1 scenario shown for reference</b>: <b>behind-the-meter gas generation at 640 gCO₂e/kWh</b> in place of location-specific grid data, a US-average data center, and embodied emissions from hardware and construction. Carbon varies by more than 10× across plausible grids, and the methodology is built to take any energy and emissions assumptions.</div>`
 };
 function breakdown(x){
@@ -914,7 +917,7 @@ function breakdown(x){
 }
 function tiles(m,x){
   return [["basis",m.basis],["hardware",m.hw],["released",m.rel||"—"],
-    ["intelligence",m.intel??"—"],["cost / session",money(x.cost)]]
+    ["performance",m.intel??"—"],["cost / session",money(x.cost)]]
     .map(a=>`<div class="tile"><div class="tv">${a[1]}</div><div class="tl">${a[0]}</div></div>`).join("");
 }
 const TPU_EXPL=`<div class="tpu-ex">
@@ -939,18 +942,27 @@ function detail(m,x){
   if(m.kind==="Open"){
     return `<div class="det"><div class="det-in">
       <div>
+        <p class="dnote" style="margin:0 0 16px">
+          Open model, benchmarked on known hardware. These measurements are the calibration base for the closed-model estimates.
+        </p>
+  
         <p class="dh">Energy by batch size</p>
         <svg class="bc" viewBox="0 0 410 250" role="img" aria-label="Energy by batch size">${batchChart(m,x)}</svg>
-        <p class="dnote">Batch size is how many requests the accelerator handles at once. Larger batches spread fixed costs over more work, so energy per request falls. We show the configuration with the <b>highest total throughput</b> (the most production-representative setting) which is not always the lowest per-request point.</p>
+  
+        <p class="dnote">
+          Batch size is how many requests the accelerator handles at once. Larger batches spread fixed costs over more work, so energy per request falls. We show the configuration with the <b>highest total throughput</b> (the most production-representative setting), which is not always the lowest per-request point.
+        </p>
+  
         ${eq}
       </div>
-
+  
       <div>
         <p class="dh">Model</p>
         <div class="tiles">${tiles(m,x)}</div>
+  
         <p class="dh" style="margin-top:16px">${bdTitle}</p>
         ${breakdown(x)}
-        <p class="dnote">Open weights, benchmarked directly on known hardware. These measurements are the calibration base for the closed-model estimates.</p>
+  
         ${METHLINK}
       </div>
     </div></div>`;
@@ -978,8 +990,8 @@ function detail(m,x){
   const cb=confBand(m.conf);
   const C=2*Math.PI*22;
   const off=C*(1-m.conf);
-  const maxw=Math.max(...m.proxies.map(p=>p.w));
-
+  const maxw=Math.max(0,...(m.proxies||[]).map(p=>p.w||0));
+  
   return `<div class="det"><div class="det-in">
     <div>
       <div class="confbox">
@@ -1013,7 +1025,69 @@ function detail(m,x){
     </div>
   </div></div>`;
 }
-    
+function radar(m,WMAX){
+  const proxies=Array.isArray(m.proxies)
+    ? m.proxies.filter(p=>p&&Number.isFinite(p.w))
+    : [];
+
+  if(!proxies.length||!Number.isFinite(WMAX)||WMAX<=0){
+    return `<text class="lab" x="210" y="130" text-anchor="middle">
+      proxy data unavailable
+    </text>`;
+  }
+
+  const cx=210,cy=120,R=80,N=proxies.length;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/N;
+  const P=(i,r)=>[
+    cx+r*Math.cos(ang(i)),
+    cy+r*Math.sin(ang(i))
+  ];
+
+  let s="";
+
+  [1,.75,.5,.25].forEach(k=>{
+    s+=`<polygon class="ring" points="${
+      proxies.map((_,i)=>
+        P(i,R*k).map(n=>n.toFixed(1)).join(",")
+      ).join(" ")
+    }"/>`;
+  });
+
+  proxies.forEach((_,i)=>{
+    const[x,y]=P(i,R);
+    s+=`<line class="spoke" x1="${cx}" y1="${cy}"
+      x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+  });
+
+  s+=`<polygon class="poly" points="${
+    proxies.map((p,i)=>
+      P(i,R*(p.w/WMAX)).map(n=>n.toFixed(1)).join(",")
+    ).join(" ")
+  }"/>`;
+
+  proxies.forEach((p,i)=>{
+    const[x,y]=P(i,R*(p.w/WMAX));
+    s+=`<circle class="dot" cx="${x.toFixed(1)}"
+      cy="${y.toFixed(1)}" r="3.6"/>`;
+  });
+
+  proxies.forEach((p,i)=>{
+    const[x,y]=P(i,R+22);
+    const a=Math.abs(x-cx)<14?"middle":(x>cx?"start":"end");
+    const nx=a==="start"?x-4:(a==="end"?x+4:x);
+    const nm=p.name.length>19?p.name.slice(0,18)+"…":p.name;
+
+    s+=`<text class="lab" x="${nx.toFixed(1)}"
+      y="${y.toFixed(1)}" text-anchor="${a}">${nm}</text>`;
+
+    s+=`<text class="wt" x="${nx.toFixed(1)}"
+      y="${(y+12).toFixed(1)}" text-anchor="${a}">
+      ${p.w.toFixed(2)}
+    </text>`;
+  });
+
+  return s;
+}    
 function batchChart(m,x){
   const cur=x.curve||[], W=410,H=250,pL=52,pR=26,pT=18,pB=42;
   const pts=cur.map((v,i)=>({b:BATCHES[i],v})).filter(p=>typeof p.v==="number");
@@ -1031,6 +1105,17 @@ function batchChart(m,x){
     const sel=p.b===m.batch;
     s+=`<circle class="${sel?'sel':'pt'}" cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="${sel?6:4.5}"><title>batch ${p.b} — ${fmt(p.v)} ${M().unit}</title></circle>`;
     s+=`<text class="ax" x="${X(i).toFixed(1)}" y="${H-pB+17}" text-anchor="middle">${p.b}</text>`;
+    if(sel){
+      const first=i===0;
+      const last=i===pts.length-1;
+      const labelX=X(i)+(first?6:last?-6:0);
+      const anchor=first?"start":last?"end":"middle";
+    
+      s+=`<text class="sell"
+        x="${labelX.toFixed(1)}"
+        y="${(Y(p.v)-13).toFixed(1)}"
+        text-anchor="${anchor}">shown here</text>`;
+    }
     if(sel) s+=`<text class="sell" x="${X(i).toFixed(1)}" y="${(Y(p.v)-13).toFixed(1)}" text-anchor="middle">shown here</text>`;});
   s+=`<text class="axt" x="${pL+pw/2}" y="${H-6}" text-anchor="middle">batch size</text>`;
   s+=`<text class="axt" transform="translate(13,${pT+ph/2}) rotate(-90)" text-anchor="middle">${M().unit} per session</text>`;
@@ -1038,7 +1123,7 @@ function batchChart(m,x){
 }
 /* ---------- chart view ---------- */
 const XT={cost:"Cost per session (USD)",intel:"Artificial Analysis Intelligence Index",release:"Release date"};
-const XN={cost:"Cost",intel:"Intelligence",release:"Release Date"};
+const XN={cost:"Cost",intel:"Performance",release:"Release Date"};
 function chartPts(){
   const k=wkey();
   return filtered().map(m=>{

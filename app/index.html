@@ -520,13 +520,13 @@
       </div>
 
       <div class="cx-stat">
-        <strong>230 million</strong>
+        <strong>230 million+</strong>
         <span>tokens generated</span>
       </div>
 
       <div class="cx-stat">
         <strong>Largest to date</strong>
-        <span>open-model energy test we are aware of</span>
+        <span>production-representative open-model energy test</span>
       </div>
     </div>
 
@@ -863,10 +863,19 @@ function tiles(m,x){
     .map(a=>`<div class="tile"><div class="tv">${a[1]}</div><div class="tl">${a[0]}</div></div>`).join("");
 }
 const TPU_EXPL=`<div class="tpu-ex">
-  <p><b>What a TPU is.</b> Google serves Gemini on Tensor Processing Units — custom chips it designed for AI work, rather than the general-purpose GPUs every other provider uses.</p>
-  <p><b>Why we can't measure them.</b> TPUs are available only inside Google's own infrastructure. There is no way to rent one, run a benchmark, and observe its power draw, and no open-weight model runs on TPU hardware — so the proxy method used for every other closed model has nothing to match against.</p>
-  <p><b>How we estimate instead.</b> CLEER starts from Google's published fleet-average accelerator energy per request, then applies TPU-specific factors for host, idle capacity, cooling and embodied hardware. Because no proxy set is involved, no confidence score applies.</p>
+  <p><b>Why Gemini is different:</b> Google serves Gemini on Tensor Processing Units (TPUs), its proprietary AI accelerators. Because TPUs do not provide a way to measure energy, CLEER cannot use the proxy clustering approach applied to other closed models.</p>
+
+  <p><b>Google's energy anchor:</b> We instead anchor Gemini estimates to Google's published disclosure. Gemini 2.0 Flash is used as the calibration model because it was the default Gemini Apps model for most of the disclosure period and is the most plausible model underlying Google's median-query result.</p>
+
+  <p><b>Energy estimation:</b> Each Gemini model is projected from its own Artificial Analysis latency/throughput data. TPU generation, accelerator count, utilization, batch size and request latency are treated as uncertain inputs and propagated through a Monte Carlo simulation.</p>
+
+  <p><b>TPU assumptions.</b> Utilization is sampled from a 30-60% range derived from published TPU power measurements. Models released before November 2025 are assigned to Trillium (v6e), while newer models can use either v6e or Ironwood. TPU counts are scaled by model tier.</p>
+
+  <p><b>Batch size calibration.</b> The v6e batch-size range is calibrated against Gemini 2.0 Flash so that simulated accelerator energy reproduces Google's 0.14 Wh disclosure. Batch size is correlated with utilization, throughput and input latency so that higher concurrency increases power draw while reducing per-request performance.</p>
+
+  <p> More detail here: (ADD LINK)</p>
 </div>`;
+
 function detail(m,x){
   const bdTitle=state.metric==="carbon"?"Carbon breakdown":"Energy breakdown";
   if(m.kind==="Open"){

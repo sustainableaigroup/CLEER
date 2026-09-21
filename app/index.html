@@ -1126,6 +1126,8 @@ function batchChart(m,x){
         y="${(Y(p.v)-13).toFixed(1)}"
         text-anchor="${anchor}">shown here</text>`;
     }
+  });
+    
   s+=`<text class="axt" x="${pL+pw/2}" y="${H-6}" text-anchor="middle">batch size</text>`;
   s+=`<text class="axt" transform="translate(13,${pT+ph/2}) rotate(-90)" text-anchor="middle">${M().unit} per session</text>`;
   return s;

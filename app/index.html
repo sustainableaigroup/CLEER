@@ -765,7 +765,7 @@ const METRICS={
   energy:{word:"energy",unit:"Wh",unitTxt:"total facility electricity per session",cls:"m-energy",
     key:"e",sd:"esd",comp:"ec",
     parts:[["Accelerator","the AI chips themselves"],["Host server","CPU, memory, network"],
-           ["Idle capacity","provisioned but not serving"],["Cooling & power distribution","PUE — facility overhead"]],
+           ["Idle capacity","provisioned but not serving"],["Cooling & power distribution","PUE (facility overhead)"]],
     pal:["#A2542C","#C87A33","#F2A74C","#F8D6A3"]},
   carbon:{word:"carbon",unit:"gCO₂e",unitTxt:"operational + embodied emissions per session",cls:"m-carbon",
     key:"c",sd:"csd",comp:"cc",
@@ -820,7 +820,7 @@ function confBand(c){
   if(c>0.85) return {c:"#4B9DA3",t:"Strong match",d:"Very close to the open models we benchmarked."};
   if(c>=0.55) return {c:"#4B9DA3",t:"Good match",d:"Comfortably within range of benchmarked open models."};
   if(c>=0.30) return {c:"#F2A74C",t:"Weaker match",d:"Fewer close analogues among the open models available."};
-  return {c:"#DD784F",t:"Extrapolated",d:"Poor match to any open model, so the estimate reaches beyond the measured range."};
+  return {c:"#DD784F",t:"Extrapolated",d:"Weak match to any open model, so the estimate reaches beyond the measured range."};
 }
 function filtered(){
   let l=MODELS.filter(m=>(m.kind==="Closed"&&state.showClosed)||(m.kind==="Open"&&state.showOpen));
@@ -994,37 +994,47 @@ function detail(m,x){
   
   return `<div class="det"><div class="det-in">
     <div>
-      <div class="confbox">
+      <p class="dnote" style="margin:0 0 16px">
+        Estimated from the 5 nearest measured open models, weighted by similarity.
+      </p>
+  
+      <p class="dh">Proxy fit</p>
+      <svg class="radar" viewBox="0 0 420 270" role="img" aria-label="Weighted open proxy models">
+        ${radar(m,maxw)}
+      </svg>
+  
+      <div class="confbox" style="margin-top:16px">
         <svg class="confring" viewBox="0 0 52 52" aria-hidden="true">
           <circle cx="26" cy="26" r="22" fill="none" stroke="#E6ECED" stroke-width="5"/>
           <circle cx="26" cy="26" r="22" fill="none" stroke="${cb.c}" stroke-width="5" stroke-linecap="round"
-            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+            stroke-dasharray="${C.toFixed(1)}"
+            stroke-dashoffset="${off.toFixed(1)}"
             transform="rotate(-90 26 26)"/>
         </svg>
-
+  
         <div>
           <div class="cv" style="color:${cb.c}">${m.conf.toFixed(2)}</div>
           <div class="clab">${cb.t}</div>
           <div class="cnote">${cb.d}</div>
         </div>
       </div>
-
-      <p class="dh">Proxy fit</p>
-      <svg class="radar" viewBox="0 0 420 270" role="img" aria-label="Weighted open proxy models">${radar(m,maxw)}</svg>
-      <p class="dnote">Estimated from the five nearest measured open models, weighted by similarity.</p>
+  
       ${eq}
     </div>
-
+  
     <div>
       <p class="dh">Model</p>
       <div class="tiles">${tiles(m,x)}</div>
+  
       <p class="dh" style="margin-top:16px">${bdTitle}</p>
       ${breakdown(x)}
+  
       ${FEED}
       ${METHLINK}
     </div>
   </div></div>`;
-}
+  }
+  
 function radar(m,WMAX){
   const proxies=Array.isArray(m.proxies)
     ? m.proxies.filter(p=>p&&Number.isFinite(p.w))
@@ -1116,7 +1126,6 @@ function batchChart(m,x){
         y="${(Y(p.v)-13).toFixed(1)}"
         text-anchor="${anchor}">shown here</text>`;
     }
-    if(sel) s+=`<text class="sell" x="${X(i).toFixed(1)}" y="${(Y(p.v)-13).toFixed(1)}" text-anchor="middle">shown here</text>`;});
   s+=`<text class="axt" x="${pL+pw/2}" y="${H-6}" text-anchor="middle">batch size</text>`;
   s+=`<text class="axt" transform="translate(13,${pT+ph/2}) rotate(-90)" text-anchor="middle">${M().unit} per session</text>`;
   return s;

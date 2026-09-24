@@ -1199,10 +1199,10 @@ function costGuides(pts,X,Y,b){
 
 /* Release axis: "most efficient to date" staircase per capability band */
 const BANDS=[
-  {lo:-Infinity,hi:20,label:"AAII < 20",  col:"#8FBFC3"},
-  {lo:20,       hi:35,label:"AAII 20–35", col:"#4B9DA3"},
-  {lo:35,       hi:Infinity,label:"AAII 35+",col:"#033845"}
-];
+  {lo:-Infinity,hi:20,label:"Performance < 20",  col:"#8FBFC3"},
+  {lo:20,       hi:35,label:"Performance 20-35", col:"#4B9DA3"},
+  {lo:35,       hi:Infinity,label:"Performance 35+",col:"#033845"}
+];  
 function bandRecords(pts,px,Y,b){
   let s="", records=[];
   const xEnd=b.pL+b.pw;
@@ -1223,9 +1223,10 @@ function bandRecords(pts,px,Y,b){
     const ly=Y(rec[rec.length-1].y);
     path.push(`${xEnd.toFixed(1)},${ly.toFixed(1)}`);             // extend current record to today
     s+=`<polyline class="band" style="stroke:${band.col}" points="${path.join(" ")}"/>`;
-    s+=`<text class="bandlab" x="${(xEnd-4).toFixed(1)}" y="${(ly-6).toFixed(1)}" text-anchor="end" style="fill:${band.col}">${band.label}</text>`;
+    const fx=px(rec[0]), fy=Y(rec[0].y), flip=fx>b.pL+b.pw-130;
+    s+=`<text class="bandlab" x="${(fx+(flip?-8:0)).toFixed(1)}" y="${(fy-12).toFixed(1)}" text-anchor="${flip?'end':'start'}" style="fill:${band.col}">${band.label}</text>`;
   });
-  s+=`<text class="guidelab" x="${(b.pL+8).toFixed(1)}" y="${(b.pT+12).toFixed(1)}">most efficient model to date, within each capability band</text>`;
+  s+=`<text class="guidelab" x="${(b.pL+8).toFixed(1)}" y="${(b.pT+12).toFixed(1)}">most efficient model to date, within each performance tier</text>`;
   return {svg:s,records};
 }
 function logTicks(lo,hi){const t=[];const a=Math.floor(Math.log10(lo)),b=Math.ceil(Math.log10(hi));
@@ -1260,7 +1261,7 @@ function renderChart(){
         <label class="sw"><input type="checkbox" id="swFront" ${state.chFront?"checked":""}> ${
           {intel:"Efficiency frontier",
            cost:(state.metric==="energy"?"Energy":"Carbon")+" per $ guides",
-           release:"Records by capability"}[state.chX]}</label>
+           release:"Release by performance"}[state.chX]}</label>
         <label class="sw"><input type="checkbox" id="swLog" ${state.chLog?"checked":""}> Log scale</label>
       </div>
       <button class="dl" id="dl">⤓ Download image</button>

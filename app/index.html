@@ -1154,10 +1154,15 @@ function chartPts(){
   }).filter(Boolean);
 }
 function frontier(pts){
-  if(state.chX==="release"){
-    const s=[...pts].sort((a,b)=>a.x-b.x); const out=[]; let best=Infinity;
-    s.forEach(p=>{if(p.y<best-1e-12){best=p.y;out.push(p);}}); return out;
-  }
+  // Higher x is "better" only for performance; lower x is "better" for cost and release.
+  const xAscendingIsBetter = state.chX !== "intel";
+  const s=[...pts].sort((a,b)=> xAscendingIsBetter ? a.x-b.x : b.x-a.x);
+  const out=[]; let best=Infinity;
+  s.forEach(p=>{ if(p.y<best-1e-12){ best=p.y; out.push(p); } });
+  // Keep frontier points in ascending-x order for drawing/labeling regardless of scan direction.
+  return out.sort((a,b)=>a.x-b.x);
+}
+
   const better=(q,p)=> state.chX==="intel"
     ? (q.x>=p.x&&q.y<=p.y&&(q.x>p.x||q.y<p.y))
     : (q.x<=p.x&&q.y<=p.y&&(q.x<p.x||q.y<p.y));
@@ -1179,8 +1184,8 @@ function renderChart(){
       <svg class="chart" id="chSvg" viewBox="0 0 840 500" role="img" aria-label="Model comparison chart"></svg>
       <div class="ch-legend" id="chLegend"></div>
       <div class="ch-foot">${LOGO_HTML}
-        <div class="meta"><b>sustainableaigroup.com</b> · CLEER-Text-0926<br>
-        Central estimates shown (no SD).</div></div>
+        <div class="meta">Version: CLEER-Text-0926<br>
+        <b>sustainableaigroup.com</b></div></div>
     </div>
     <div class="ch-panel">
       <p class="ch-ph">Chart settings</p>
@@ -1209,7 +1214,7 @@ function renderChart(){
 function drawChart(){
   const U=M().unit, w=WL[wkey()];
   $("#chTitle").textContent=`${state.metric==="energy"?"Energy":"Carbon"} vs ${XN[state.chX]}`;
-  $("#chSub").textContent=`${w.use_case} · ${w.tier.toLowerCase()} session · one workload applied to every model`;
+  $("#chSub").textContent=`${w.use_case} · ${w.tier.toLowerCase()} session · central estimate`;
   const pts=chartPts();
   $("#chCount").textContent=`${pts.length} models`;
   const W=840,H=500,pL=68,pR=26,pT=22,pB=56, pw=W-pL-pR, ph=H-pT-pB;

@@ -1162,12 +1162,6 @@ function frontier(pts){
   // Keep frontier points in ascending-x order for drawing/labeling regardless of scan direction.
   return out.sort((a,b)=>a.x-b.x);
 }
-
-  const better=(q,p)=> state.chX==="intel"
-    ? (q.x>=p.x&&q.y<=p.y&&(q.x>p.x||q.y<p.y))
-    : (q.x<=p.x&&q.y<=p.y&&(q.x<p.x||q.y<p.y));
-  return pts.filter(p=>!pts.some(q=>q!==p&&better(q,p))).sort((a,b)=>a.x-b.x);
-}
 function logTicks(lo,hi){const t=[];const a=Math.floor(Math.log10(lo)),b=Math.ceil(Math.log10(hi));
   for(let e=a;e<=b;e++)for(const m of[1,2,5]){const v=m*Math.pow(10,e); if(v>=lo*0.95&&v<=hi*1.05)t.push(v);}
   return t.length>8?t.filter((_,i)=>i%2===0):t;}

@@ -512,6 +512,8 @@
   .asm-btn{display:inline-flex; align-items:center; gap:9px; font-family:var(--mono); font-size:12.5px;
     background:var(--white); border:1px solid var(--line); border-radius:11px; padding:8px 13px 8px 12px;
     color:var(--ink); cursor:pointer; transition:border-color .2s, background .2s, box-shadow .2s;}
+  .asm-tick{position:absolute; top:50%; left:calc(8.5px + (100% - 17px) * var(--t)); width:2px; height:12px;
+    margin:-6px 0 0 -1px; border-radius:1px; background:var(--accent-deep); opacity:.55; pointer-events:none;}
   .asm-btn:hover{border-color:var(--accent-2);}
   .asm-btn[aria-expanded="true"]{border-color:var(--accent-2); box-shadow:0 0 0 3px var(--accent-tint);}
   .asm-btn .asm-k{font-size:9.5px; letter-spacing:1.3px; text-transform:uppercase; color:var(--faint);}
@@ -653,16 +655,11 @@
           Results include accelerator and host-server energy,
           idle capacity, cooling and power distribution, and
           embodied emissions from hardware and data center construction.
+       
+          <b>Scenario default:</b> behind-the-meter gas generation at
+          <b>640 gCO₂e/kWh</b>, combined with US-average data center assumptions for PUE (1.45). Both values can be toggled in the dashboard.
+          Learn more: <a href="#">Emissions Calculation →</a>
         </p>
-
-        <div class="cx-callout">
-          <b>Scenario shown:</b> behind-the-meter gas generation at
-          <b>640 gCO₂e/kWh</b>, combined with US-average facility assumptions for PUE.
-          Carbon results can vary by more than 10× across plausible electricity
-          sources; CLEER can be applied using different energy and emissions
-          assumptions.
-          <a href="#">Emissions Calculation →</a>
-        </div>
       </section>
     </div>
 
@@ -835,7 +832,7 @@ const METRICS={
     pal:["#A2542C","#C87A33","#F2A74C","#F8D6A3"]},
   carbon:{word:"carbon",unit:"gCO₂e",unitTxt:"operational + embodied emissions per session",cls:"m-carbon",
     key:"c",sd:"csd",comp:"cc",
-    parts:[["Operational electricity","grid intensity"],["Embodied hardware","chip & server manufacturing"],
+    parts:[["Operational electricity","electric intensity"],["Embodied hardware","chip & server manufacturing"],
            ["Data center construction","building & plant"]],
     pal:["#242424","#5C5C5C","#A8A8A8"]}
 };
@@ -994,20 +991,20 @@ const meta = state.sortKey==="cost"?money(x.cost):(state.sortKey==="intel"?("AAI
 const METHLINK=`<div class="mlink">Factors and sources: <a href="#">Closed AI Emissions Calculation-0926 ↗</a></div>`;
 const FEED=`<div class="gated"><b>CLEER Feed</b>Per-token intensity factors for carbon accounting and engineering telemetry integration. API access coming soon. <a href="#">Reach out →</a></div>`;
 const SCEN={
-  energy:`<div class="scen"><b>CLEER estimates accelerator energy</b> for each model. The remaining components are added using defensible assumptions drawn from the latest research, standards, and established methodologies. Facility overhead is calculated using <b>PUE</b> (power usage effectiveness), with a <b>US-average data center</b> used for this dashboard. These factors vary by operator and site, and the calculation can accommodate site-specific details.</div>`,
-  carbon:`<div class="scen">This is <b>1 scenario shown for reference</b>: <b>behind-the-meter gas generation at 640 gCO₂e/kWh</b> in place of location-specific grid data, a US-average data center, and embodied emissions from hardware and construction. Carbon varies by more than 10× across plausible grids, and the methodology is built to take any energy and emissions assumptions.</div>`
+  energy:`<div class="scen"><b>CLEER estimates accelerator energy</b> for each model. The remaining components are added using defensible assumptions drawn from the latest research, standards, and established methodologies. PUE can be modified in the top right of the dashboard.</div>`,
+  carbon:`<div class="scen">Carbon intensity of electricity can be toggled in the top right of the dashboard.</div>`
 };
 function partSub(i){
   const k=M();
   if(state.metric==="energy"&&i===3) return `PUE ${state.pue.toFixed(2)} (facility overhead)`;
-  if(state.metric==="carbon"&&i===0) return `grid intensity · ${state.ci} gCO₂e/kWh`;
+  if(state.metric==="carbon"&&i===0) return `electricity intensity · ${state.ci} gCO₂e/kWh`;
   return k.parts[i][1];
 }
 function adjNote(){
   if(isDefault()) return "";
   const bits=[];
   if(state.pue!==ASM.pue) bits.push(`PUE <b>${state.pue.toFixed(2)}</b> (default ${ASM.pue.toFixed(2)})`);
-  if(state.metric==="carbon"&&state.ci!==ASM.ci) bits.push(`grid intensity <b>${state.ci} gCO₂e/kWh</b> (default ${ASM.ci})`);
+  if(state.metric==="carbon"&&state.ci!==ASM.ci) bits.push(`electricity intensity <b>${state.ci} gCO₂e/kWh</b> (default ${ASM.ci})`);
   return bits.length?`<span class="adj">Adjusted: ${bits.join(" · ")}.</span>`:"";
 }
 function breakdown(x){
@@ -1638,15 +1635,15 @@ let st;$("#search").addEventListener("input",e=>{const v=e.target.value;clearTim
 const ASMCFG={
   energy:{key:"pue", label:"PUE", unit:"", title:"Data center efficiency (PUE)",
     desc:"Power usage effectiveness: total facility power ÷ IT power. Lower means less energy lost to cooling and power distribution.",
-    min:1.05, step:0.01, dp:2,
-    defLabel:"US-average data center",
-    presets:[{v:1.10,l:"Leading hyperscale",a:"≈"},{v:1.25,l:"Efficient colocation",a:"≈"}],
+    min:1.05, max:2.0, step:0.01, dp:2,
+    defLabel:"US-ave DC",
+    presets:[{v:1.09,l:"Leading hyperscale",a:"≈"},{v:1.25,l:"Efficient colocation",a:"≈"}],
     note:()=>`Changes the <b>cooling &amp; power distribution</b> component only. Carries through to carbon, since operational emissions scale with facility energy.`},
-  carbon:{key:"ci", label:"Grid", unit:"gCO₂e/kWh", title:"Electricity carbon intensity",
-    desc:"Emissions per kWh of electricity supplied to the data center. Depends on the grid region and any on-site or contracted generation.",
-    min:0, step:5, dp:0,
+  carbon:{key:"ci", label:"", unit:"gCO₂e/kWh", title:"Electricity carbon intensity",
+    desc:"Emissions per kWh of electricity supplied to the data center. Depends on grid region and any on-site generation.",
+    min:0, max:1000, step:5, dp:0,
     defLabel:"Behind-the-meter gas",
-    presets:[{v:25,l:"Wind / solar",a:"≈"},{v:250,l:"EU grid",a:"≈"},{v:380,l:"US grid",a:"≈"}],
+    presets:[{v:25,l:"Low-carbon",a:"≈"},{v:250,l:"EU grid",a:"≈"},{v:410,l:"US-ave DC",a:"≈"},{v:820,l:"Coal",a:"≈"}],
     note:()=>`Changes <b>operational</b> emissions only; embodied hardware and construction stay fixed. Using PUE <b>${state.pue.toFixed(2)}</b>${state.pue!==ASM.pue?"":" (default)"} · <span class="asm-link"><button type="button" id="asmGoPue">adjust in Energy</button></span>`}
 };
 const CHEV=`<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>`;
@@ -1658,9 +1655,10 @@ function asmTag(){
   return t.length?" · "+t.join(" · "):"";
 }
 function renderAsmButton(){
-  const c=ASMCFG[state.metric], btn=$("#asmBtn"); if(!c||!btn) return;
+  const c=ASMCFG[state.metric], max=c.max??ASM[key];
+  btn=$("#asmBtn"); if(!c||!btn) return;
   const v=state[c.key], def=ASM[c.key], isDef=Math.abs(v-def)<1e-9;
-  btn.innerHTML=`<span class="asm-dot${isDef?" def":""}" aria-hidden="true"></span><span class="asm-k">${c.label}</span>`+
+  btn.innerHTML=`<span class="asm-dot${isDef?" def":""}" aria-hidden="true"></span>${c.label?`<span class="asm-k">${c.label}</span>`:""}`+
     `<span class="asm-v">${v.toFixed(c.dp)}</span>${c.unit?`<span class="asm-u">${c.unit}</span>`:""}${CHEV}`;
   btn.title=isDef?`Default: ${c.defLabel}. Click to adjust.`:`Adjusted from default ${def.toFixed(c.dp)}. Click to change.`;
   btn.setAttribute("aria-label",`${c.title}: ${v.toFixed(c.dp)} ${c.unit}${isDef?" (default)":""}`);
@@ -1677,10 +1675,11 @@ function setAsm(key,v){
 function buildAsmPop(){
   const c=ASMCFG[state.metric], def=ASM[c.key], pop=$("#asmPop");
   pop.innerHTML=`<p class="asm-h">${c.title}</p><p class="asm-d">${c.desc}</p>
-    <div class="asm-val"><input id="asmIn" type="number" inputmode="decimal" min="${c.min}" max="${def}" step="${c.step}" aria-label="${c.title}">
+    <div class="asm-val"><input id="asmIn" type="number" inputmode="decimal" min="${c.min}" max="${c.max}" step="${c.step}" aria-label="${c.title}">
       ${c.unit?`<span class="u">${c.unit}</span>`:""}<span class="delta" id="asmDelta"></span></div>
-    <div class="asm-track"><input class="slider" id="asmRange" type="range" min="${c.min}" max="${def}" step="${c.step}" aria-label="${c.title}"></div>
-    <div class="asm-ends"><span>${c.min.toFixed(c.dp)}</span><span class="def">${def.toFixed(c.dp)} · default · ${c.defLabel}</span></div>
+    <div class="asm-track"><input class="slider" id="asmRange" type="range" min="${c.min}" max="${c.max}" step="${c.step}" aria-label="${c.title}">
+      <span class="asm-tick" style="--t:${(def-c.min)/(c.max-c.min)}" title="default"></span></div>
+    <div class="asm-ends"><span>${c.min.toFixed(c.dp)}</span><span class="def">◆ default ${def.toFixed(c.dp)} · ${c.defLabel}</span><span>${c.max.toFixed(c.dp)}</span></div>
     <div class="asm-presets" id="asmPresets">${c.presets.map(p=>`<button class="chip" type="button" data-v="${p.v}">${p.l}<small>${p.a}${p.v.toFixed(c.dp)}</small></button>`).join("")}
       <button class="chip" type="button" data-v="${def}">Default<small>${def.toFixed(c.dp)}</small></button></div>
     <div class="asm-note">${c.note()}</div>
@@ -1697,16 +1696,14 @@ function buildAsmPop(){
 }
 function syncAsmPop(){
   const c=ASMCFG[state.metric], v=state[c.key], def=ASM[c.key], r=$("#asmRange"); if(!r) return;
-  r.value=v; r.style.setProperty("--p",((v-c.min)/(def-c.min)*100)+"%");
+  r.value=v; r.style.setProperty("--p",((v-c.min)/(c.max-c.min)*100)+"%");
   const inp=$("#asmIn"); if(document.activeElement!==inp) inp.value=v.toFixed(c.dp);
   // effect on this view's metric, relative to the default scenario
-  let f;
-  if(state.metric==="energy") f=state.pue/ASM.pue;
-  else f=null;
+  const f = state.metric==="energy" ? state.pue/ASM.pue : (state.ci*state.pue)/(ASM.ci*ASM.pue);
+  const pct=Math.round((f-1)*100), what=state.metric==="energy"?"energy":"operational";
   const d=$("#asmDelta");
   if(Math.abs(v-def)<1e-9) d.innerHTML="default";
-  else if(f!=null) d.innerHTML=`energy <b>−${Math.round((1-f)*100)}%</b>`;
-  else d.innerHTML=`operational <b>−${Math.round((1-state.ci*state.pue/(ASM.ci*ASM.pue))*100)}%</b>`;
+  else d.innerHTML=`${what} <b>${pct>0?"+":"−"}${Math.abs(pct)}%</b>`;
   $("#asmPresets").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",Math.abs(+b.dataset.v-v)<1e-9));
   $("#asmReset").disabled=Math.abs(v-def)<1e-9;
 }

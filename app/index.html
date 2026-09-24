@@ -827,11 +827,13 @@ const KINDC={Closed:"#B8663B",Open:"#2B6572"};
 const METRICS={
   energy:{word:"energy",unit:"Wh",unitTxt:"total facility electricity per session",cls:"m-energy",
     key:"e",sd:"esd",comp:"ec",
+    defLabel:"US-ave DC", defChip:"US-ave DC",
     parts:[["Accelerator","the AI chips themselves"],["Host server","CPU, memory, network"],
            ["Idle capacity","provisioned but not serving"],["Cooling & power distribution","PUE (facility overhead)"]],
     pal:["#A2542C","#C87A33","#F2A74C","#F8D6A3"]},
   carbon:{word:"carbon",unit:"gCO₂e",unitTxt:"operational + embodied emissions per session",cls:"m-carbon",
     key:"c",sd:"csd",comp:"cc",
+    defLabel:"Behind-the-meter gas", defChip:"BTM gas",
     parts:[["Operational electricity","electric intensity"],["Embodied hardware","chip & server manufacturing"],
            ["Data center construction","building & plant"]],
     pal:["#242424","#5C5C5C","#A8A8A8"]}
@@ -1679,7 +1681,7 @@ function buildAsmPop(){
       <span class="asm-tick" style="--t:${(def-c.min)/(c.max-c.min)}" title="default"></span></div>
     <div class="asm-ends"><span>${c.min.toFixed(c.dp)}</span><span class="def">◆ default ${def.toFixed(c.dp)} · ${c.defLabel}</span><span>${c.max.toFixed(c.dp)}</span></div>
     <div class="asm-presets" id="asmPresets">${c.presets.map(p=>`<button class="chip" type="button" data-v="${p.v}">${p.l}<small>${p.a}${p.v.toFixed(c.dp)}</small></button>`).join("")}
-      <button class="chip" type="button" data-v="${def}">Default<small>${def.toFixed(c.dp)}</small></button></div>
+      <button class="chip" type="button" data-v="${def}">${c.defChip||"Default"}<small>${def.toFixed(c.dp)}</small></button></div>
     <div class="asm-note">${c.note()}</div>
     <div class="asm-foot"><button class="asm-reset" id="asmReset" type="button">↺ Reset to default</button>
       <span class="asm-link">applies to every view</span></div>`;

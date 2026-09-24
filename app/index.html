@@ -725,6 +725,13 @@ function formatDataDate(value){
     .format(new Date(value+"T00:00:00Z"));
 }
 
+function formatReleaseMonth(value){
+  if(!/^\d{4}-\d{2}$/.test(value||"")) return value||"—";
+  const [y,mo]=value.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})
+    .format(new Date(Date.UTC(y,mo-1,1)));
+}
+
 async function loadData(){
   setDataControlsDisabled(true);
   view.innerHTML='<div class="data-state" role="status"><span class="data-spinner" aria-hidden="true"></span><p>Loading model data…</p></div>';
@@ -882,8 +889,7 @@ function rowHTML(m,rank,c){
   const dot = cb ? `<span class="cdot" style="background:${cb.c}" title="confidence ${m.conf.toFixed(2)} — ${cb.t}"></span>` : `<span></span>`;
   const badge = isOpen?'<span class="kbadge" title="open-weight model, benchmarked on known hardware">Open</span>'
     : (m.serving==="TPU"?'<span class="kbadge" title="CLEER TPU calibration">TPU</span>':'');
-  const meta = state.sortKey==="cost"?money(x.cost):(state.sortKey==="intel"?("II "+(m.intel??"—")):(state.sortKey==="release"?(m.rel||"—"):""));
-  return `<div class="row${open?' open':''}${isOpen?' k-open':''}" data-m="${m.name.replace(/"/g,'&quot;')}">
+const meta = state.sortKey==="cost"?money(x.cost):(state.sortKey==="intel"?("AAII "+(m.intel??"—")):(state.sortKey==="release"?formatReleaseMonth(m.rel):""));  return `<div class="row${open?' open':''}${isOpen?' k-open':''}" data-m="${m.name.replace(/"/g,'&quot;')}">
     <button class="row-head" aria-expanded="${open}" aria-label="${m.name}, ${fmt(x.v)} ${U}">
       <span class="rk">${rank}</span><span class="prov">${m.provider}</span>
       <span class="rname">${m.name}${badge}${meta?`<small>${meta}</small>`:''}</span>${dot}
@@ -911,10 +917,19 @@ function breakdown(x){
     ${SCEN[state.metric]}</div>`;
 }
 function tiles(m,x){
-  return [["basis",m.basis],["hardware",m.hw],["released",m.rel||"—"],
-    ["performance",m.intel??"—"],["cost / session",money(x.cost)]]
-    .map(a=>`<div class="tile"><div class="tv">${a[1]}</div><div class="tl">${a[0]}</div></div>`).join("");
+  const items=[["basis",m.basis],["hardware",m.hw],["released",formatReleaseMonth(m.rel)],
+    ["performance",m.intel??"—"],["cost / session",money(x.cost)]];
+  return items.map(a=>{
+    if(a[0]==="performance"){
+      return `<a class="tile" href="https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index"
+        target="_blank" rel="noopener" title="Artificial Analysis Intelligence Index v4.3.2"
+        style="text-decoration:none;color:inherit">
+        <div class="tv">${a[1]}</div><div class="tl">${a[0]}</div></a>`;
+    }
+    return `<div class="tile"><div class="tv">${a[1]}</div><div class="tl">${a[0]}</div></div>`;
+  }).join("");
 }
+
 const TPU_EXPL=`<div class="tpu-ex">
   <p><b>Why Gemini is different:</b> Google serves Gemini on Tensor Processing Units (TPUs), its proprietary AI accelerators. Because TPUs do not provide a way to measure energy, CLEER cannot use the proxy clustering approach applied to other closed models.</p>
 
@@ -1165,7 +1180,7 @@ function renderChart(){
       <div class="ch-legend" id="chLegend"></div>
       <div class="ch-foot">${LOGO_HTML}
         <div class="meta"><b>sustainableaigroup.com</b> · CLEER-Text-0926<br>
-        Plotted values are central estimates. Reported figures carry a standard deviation — see CLEER for full detail.</div></div>
+        Central estimates shown (no SD).</div></div>
     </div>
     <div class="ch-panel">
       <p class="ch-ph">Chart settings</p>
@@ -1245,9 +1260,18 @@ function drawChart(){
       ? `<circle data-i="${idx}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${on?6:4.8}" fill="#fff" stroke="${col}" stroke-width="2.1"/>`
       : `<circle data-i="${idx}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${on?5.8:4.4}" fill="${col}" stroke="#fff" stroke-width="1.3"/>`;
   });
-  if(state.chFront) fr.forEach(p=>{const x=px(p),y=Y(p.y),flip=x>W-190;
-    const dy = state.chX==="release" ? -13 : 3.5;
-    s+=`<text class="lab" x="${(x+(flip?-10:10)).toFixed(1)}" y="${(y+dy).toFixed(1)}" text-anchor="${flip?'end':'start'}">${p.m.name}</text>`;});
+  if(state.chFront){
+    let lastX=-Infinity, lastY=-Infinity, toggle=false;
+    fr.forEach(p=>{
+      const x=px(p), y=Y(p.y), flip=x>W-190;
+      let dy = state.chX==="release" ? -13 : 3.5;
+      const crowded = Math.abs(x-lastX)<95 && Math.abs(y-lastY)<22;
+      if(crowded){ toggle=!toggle; dy = toggle ? -15 : 15; }
+      else{ toggle=false; }
+      lastX=x; lastY=y;
+      s+=`<text class="lab" x="${(x+(flip?-10:10)).toFixed(1)}" y="${(y+dy).toFixed(1)}" text-anchor="${flip?'end':'start'}">${p.m.name}</text>`;
+    });
+  }
   svg.innerHTML=s;
   svg.querySelectorAll("circle[data-i]").forEach(c=>{
     const p=pts[+c.dataset.i];

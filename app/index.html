@@ -1655,8 +1655,7 @@ function asmTag(){
   return t.length?" · "+t.join(" · "):"";
 }
 function renderAsmButton(){
-  const c=ASMCFG[state.metric], max=c.max??ASM[key];
-  btn=$("#asmBtn"); if(!c||!btn) return;
+  const c=ASMCFG[state.metric], btn=$("#asmBtn"); if(!c||!btn) return;
   const v=state[c.key], def=ASM[c.key], isDef=Math.abs(v-def)<1e-9;
   btn.innerHTML=`<span class="asm-dot${isDef?" def":""}" aria-hidden="true"></span>${c.label?`<span class="asm-k">${c.label}</span>`:""}`+
     `<span class="asm-v">${v.toFixed(c.dp)}</span>${c.unit?`<span class="asm-u">${c.unit}</span>`:""}${CHEV}`;
@@ -1665,7 +1664,7 @@ function renderAsmButton(){
 }
 let asmRaf=0;
 function setAsm(key,v){
-  const c=ASMCFG[state.metric], max=ASM[key];
+  const c=ASMCFG[state.metric], max=c.max??ASM[key];
   v=Math.max(c.min,Math.min(max,+v));
   if(!Number.isFinite(v)) return;
   state[key]=+v.toFixed(c.dp);

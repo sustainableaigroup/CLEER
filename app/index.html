@@ -506,6 +506,59 @@
     line-height: 1.4;
     color: var(--faint);
   }
+
+  /* ---------- assumption control (PUE / grid intensity) ---------- */
+  .assume{margin-left:auto; position:relative;}
+  .asm-btn{display:inline-flex; align-items:center; gap:9px; font-family:var(--mono); font-size:12.5px;
+    background:var(--white); border:1px solid var(--line); border-radius:11px; padding:8px 13px 8px 12px;
+    color:var(--ink); cursor:pointer; transition:border-color .2s, background .2s, box-shadow .2s;}
+  .asm-btn:hover{border-color:var(--accent-2);}
+  .asm-btn[aria-expanded="true"]{border-color:var(--accent-2); box-shadow:0 0 0 3px var(--accent-tint);}
+  .asm-btn .asm-k{font-size:9.5px; letter-spacing:1.3px; text-transform:uppercase; color:var(--faint);}
+  .asm-btn .asm-v{font-weight:500; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .asm-btn .asm-u{color:var(--muted); font-size:11px;}
+  .asm-btn .asm-dot{width:7px; height:7px; border-radius:50%; background:var(--accent-2); flex:none;}
+  .asm-btn .asm-dot.def{background:transparent; box-shadow:0 0 0 1px var(--line-2) inset;}
+  .asm-btn svg{width:13px; height:13px; color:var(--faint); transition:transform .2s;}
+  .asm-btn[aria-expanded="true"] svg{transform:rotate(180deg);}
+  .asm-pop{position:absolute; right:0; top:calc(100% + 8px); z-index:40; width:min(380px, calc(100vw - 32px));
+    background:var(--white); border:1px solid var(--line); border-radius:16px; padding:18px 18px 16px;
+    box-shadow:0 18px 44px -18px rgba(3,56,69,.35), 0 2px 8px rgba(3,56,69,.06);
+    opacity:0; transform:translateY(-4px); pointer-events:none; transition:opacity .16s ease, transform .16s ease;}
+  .asm-pop.on{opacity:1; transform:none; pointer-events:auto;}
+  .asm-h{font-family:var(--inter); font-weight:600; font-size:14px; color:var(--ocean); margin:0 0 3px;}
+  .asm-d{font-size:12.5px; color:var(--muted); line-height:1.5; margin:0 0 14px;}
+  .asm-val{display:flex; align-items:baseline; gap:8px; margin-bottom:10px;}
+  .asm-val input{font-family:var(--mono); font-size:30px; font-weight:400; color:var(--accent); width:4.4ch;
+    border:0; border-bottom:1px dashed var(--line-2); background:transparent; padding:0 0 1px; outline:none;
+    font-variant-numeric:tabular-nums; -moz-appearance:textfield;}
+  .asm-val input::-webkit-outer-spin-button,.asm-val input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .asm-val input:focus{border-bottom-color:var(--accent-2);}
+  .asm-val .u{font-family:var(--mono); font-size:12px; color:var(--muted);}
+  .asm-val .delta{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--faint);}
+  .asm-val .delta b{color:var(--accent); font-weight:500;}
+  .asm-track{position:relative; padding:4px 0 2px;}
+  .asm-track .slider{display:block;}
+  .asm-ends{display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:7px;}
+  .asm-ends .def{color:var(--accent); font-weight:500;}
+  .asm-presets{display:flex; flex-wrap:wrap; gap:6px; margin:13px 0 12px;}
+  .asm-presets .chip{font-size:11.5px; padding:5px 10px;}
+  .asm-presets .chip small{color:var(--faint); margin-left:5px;}
+  .asm-presets .chip[aria-pressed="true"] small{color:var(--accent);}
+  .asm-note{font-size:11.5px; color:var(--muted); line-height:1.5; border-top:1px solid var(--mist); padding-top:11px;}
+  .asm-note b{color:var(--ink); font-weight:500;}
+  .asm-foot{display:flex; justify-content:space-between; align-items:center; margin-top:11px;}
+  .asm-reset{font-family:var(--mono); font-size:11.5px; background:none; border:0; color:var(--accent); cursor:pointer; padding:0;}
+  .asm-reset[disabled]{color:var(--faint); cursor:default;}
+  .asm-link{font-family:var(--mono); font-size:11px; color:var(--faint);}
+  .asm-link button{font:inherit; background:none; border:0; padding:0; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px;}
+  .scen .adj{display:block; margin-top:8px; color:var(--accent-deep);}
+  @media (max-width:640px){
+    .assume{margin-left:0; width:100%;}
+    .asm-btn{width:100%; justify-content:flex-start;}
+    .asm-btn svg{margin-left:auto;}
+    .asm-pop{left:0; right:auto; width:100%;}
+  }
 </style>
 </head>
 <body class="m-energy">
@@ -531,6 +584,10 @@
       <button disabled aria-disabled="true"><span class="md" style="background:#55BAC0"></span>Water<span class="soon">soon</span></button>
     </div>
     <span class="munit" id="munit"></span>
+    <div class="assume" id="assume">
+      <button class="asm-btn" id="asmBtn" type="button" aria-expanded="false" aria-controls="asmPop"></button>
+      <div class="asm-pop" id="asmPop" role="dialog" aria-label="Adjust assumption"></div>
+    </div>
   </div>
 
   <details class="cleer-x">
@@ -721,7 +778,7 @@ function normalisePayload(payload){
 }
 
 function setDataControlsDisabled(disabled){
-  document.querySelectorAll("#mtog button:not([aria-disabled='true']),#useseg button,#tierSlider,#show-grp button,#search,#prov-chips button,.views button")
+  document.querySelectorAll("#mtog button:not([aria-disabled='true']),#useseg button,#tierSlider,#show-grp button,#search,#prov-chips button,.views button,#asmBtn")
     .forEach(el=>{el.disabled=disabled;});
 }
 
@@ -746,6 +803,7 @@ async function loadData(){
     if(!response.ok) throw new Error(`Data request failed with status ${response.status}`);
     DB=normalisePayload(await response.json());
     MODELS=DB.models; WL=DB.workloads; BATCHES=DB.batches;
+    detectDefaults();
     if(!MODELS.length||!WL["chat.typical"]||!WL["agentic.typical"]){
       throw new Error("Required model or workload data is missing");
     }
@@ -785,7 +843,8 @@ const TIERS=["light","typical","heavy"];
 const state={metric:"energy",view:"list",uc:"agentic",tier:"typical",provider:"all",q:"",
   sortKey:"value",sortDir:"desc",showClosed:true,showOpen:true,open:null,
   cmpMode:"models",cmpA:"Claude Haiku 4.5",cmpB:"Claude Opus 4.7",cmpW:"chat.typical",
-  chX:"cost",chColour:"provider",chFront:true,chLog:true};
+  chX:"cost",chColour:"provider",chFront:true,chLog:true,
+  pue:1.45,ci:640,asmOpen:false};
 const $=s=>document.querySelector(s), view=$("#view"), tip=$("#tip");
 const fmt=x=>x==null?"—":(x<0.01?x.toFixed(4):(x<1?x.toFixed(3):(x<10?x.toFixed(2):(x<1000?x.toFixed(1):Math.round(x)))));
 const money=x=>x==null?"—":(x<0.01?"$"+x.toFixed(5):(x<1?"$"+x.toFixed(4):"$"+x.toFixed(2)));
@@ -822,7 +881,34 @@ const wkey=()=>state.uc+"."+state.tier;
 const M=()=>METRICS[state.metric];
 const byName=n=>MODELS.find(m=>m.name===n);
 const relNum=r=>{if(!r)return null; const[y,mo]=String(r).split("-").map(Number); return y+(mo-1)/12;};
-function val(m,key){ const r=m.results[key||wkey()]; if(!r) return null;
+/* ---------- assumption scaling ----------
+   Published results are built on one PUE and one grid intensity (read back from the data at load).
+   Energy  : IT load (accelerator + host + idle) × PUE  → only the cooling/overhead component moves.
+   Carbon  : operational = facility energy × grid intensity; embodied + construction are unchanged.
+   SDs keep their coefficient of variation.                                                          */
+const ASM={pue:1.45, ci:640};                     // overwritten by detectDefaults()
+function detectDefaults(){
+  for(const m of MODELS) for(const r of Object.values(m.results)){
+    const it=r.ec[0]+r.ec[1]+r.ec[2], e=it+r.ec[3];
+    if(it>0&&e>0&&r.cc[0]>0){ ASM.pue=+(e/it).toFixed(3); ASM.ci=Math.round(r.cc[0]/e*1000);
+      state.pue=ASM.pue; state.ci=ASM.ci; return; }
+  }
+}
+const isDefault=()=>Math.abs(state.pue-ASM.pue)<1e-9&&Math.abs(state.ci-ASM.ci)<1e-9;
+function scaled(r){
+  if(!r) return r;
+  if(isDefault()) return r;
+  const it=r.ec[0]+r.ec[1]+r.ec[2], kE=state.pue/ASM.pue;
+  const ec=[r.ec[0],r.ec[1],r.ec[2],it*(state.pue-1)];
+  const e=ec.reduce((a,b)=>a+b,0);
+  const op=e*state.ci/1000;
+  const cc=[op,r.cc[1],r.cc[2]];
+  const c=cc.reduce((a,b)=>a+b,0);
+  return {...r, e, esd:r.esd==null?null:r.esd*e/r.e, ec,
+    c, csd:r.csd==null?null:r.csd*c/r.c, cc,
+    curve:r.curve?r.curve.map(v=>typeof v==="number"?v*kE:v):r.curve};
+}
+function val(m,key){ const r=scaled(m.results[key||wkey()]); if(!r) return null;
   const k=M(); return {v:r[k.key], sd:r[k.sd], comp:r[k.comp], cost:r.cost, curve:r.curve}; }
 function confBand(c){
   if(c>0.85) return {c:"#4B9DA3",t:"Strong match",d:"Very close to the open models we benchmarked."};
@@ -852,6 +938,7 @@ function render(){
   document.body.className=k.cls;
   $("#mwTxt").textContent=k.word;
   $("#munit").innerHTML=`<b>${k.unit}</b> · ${k.unitTxt}`;
+  renderAsmButton();
   document.querySelectorAll("#mtog button[data-metric]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.metric===state.metric));
   const w=WL[wkey()];
   $("#wd1").innerHTML=ICON[state.uc]+`${w.use_case} · ${w.tier.toLowerCase()}`;
@@ -910,17 +997,30 @@ const SCEN={
   energy:`<div class="scen"><b>CLEER estimates accelerator energy</b> for each model. The remaining components are added using defensible assumptions drawn from the latest research, standards, and established methodologies. Facility overhead is calculated using <b>PUE</b> (power usage effectiveness), with a <b>US-average data center</b> used for this dashboard. These factors vary by operator and site, and the calculation can accommodate site-specific details.</div>`,
   carbon:`<div class="scen">This is <b>1 scenario shown for reference</b>: <b>behind-the-meter gas generation at 640 gCO₂e/kWh</b> in place of location-specific grid data, a US-average data center, and embodied emissions from hardware and construction. Carbon varies by more than 10× across plausible grids, and the methodology is built to take any energy and emissions assumptions.</div>`
 };
+function partSub(i){
+  const k=M();
+  if(state.metric==="energy"&&i===3) return `PUE ${state.pue.toFixed(2)} (facility overhead)`;
+  if(state.metric==="carbon"&&i===0) return `grid intensity · ${state.ci} gCO₂e/kWh`;
+  return k.parts[i][1];
+}
+function adjNote(){
+  if(isDefault()) return "";
+  const bits=[];
+  if(state.pue!==ASM.pue) bits.push(`PUE <b>${state.pue.toFixed(2)}</b> (default ${ASM.pue.toFixed(2)})`);
+  if(state.metric==="carbon"&&state.ci!==ASM.ci) bits.push(`grid intensity <b>${state.ci} gCO₂e/kWh</b> (default ${ASM.ci})`);
+  return bits.length?`<span class="adj">Adjusted: ${bits.join(" · ")}.</span>`:"";
+}
 function breakdown(x){
   const k=M(), tot=x.comp.reduce((a,b)=>a+b,0);
   const seg=x.comp.map((v,i)=>{const p=tot?v/tot*100:0;
     return `<i style="width:${p.toFixed(2)}%;background:${k.pal[i]}" title="${k.parts[i][0]} — ${fmt(v)} ${k.unit} (${p.toFixed(1)}%)">${p>13?`<span>${p.toFixed(0)}%</span>`:""}</i>`;}).join("");
   const rows=x.comp.map((v,i)=>{const p=tot?v/tot*100:0;
     return `<div class="bd-row"><span class="bd-sw" style="background:${k.pal[i]}"></span>
-      <span class="bd-l">${k.parts[i][0]}<small>${k.parts[i][1]}</small></span>
+      <span class="bd-l">${k.parts[i][0]}<small>${partSub(i)}</small></span>
       <span class="bd-v">${fmt(v)}</span><span class="bd-p">${p<0.1?"<0.1":p.toFixed(1)}%</span></div>`;}).join("");
   return `<div class="bd"><div class="bd-bar">${seg}</div>${rows}
     <div class="bd-tot"><span class="bl">Total ${state.metric}</span><span class="bv">${fmt(tot)} ${k.unit}</span></div>
-    ${SCEN[state.metric]}</div>`;
+    ${SCEN[state.metric].replace(/<\/div>$/, adjNote()+"</div>")}</div>`;
 }
 function tiles(m,x){
   const items=[["basis",m.basis],["hardware",m.hw],["released",formatReleaseMonth(m.rel)],
@@ -1154,7 +1254,8 @@ const XN={cost:"Cost",intel:"Performance",release:"Release Date"};
 function chartPts(){
   const k=wkey();
   return filtered().map(m=>{
-    const r=m.results[k], y=state.metric==="energy"?r.e:r.c;
+    const r=scaled(m.results[k]); if(!r) return null;
+    const y=state.metric==="energy"?r.e:r.c;
     let x = state.chX==="cost"?r.cost : state.chX==="intel"?m.intel : relNum(m.rel);
     return (x==null||y==null)?null:{m,x,y,rel:m.rel};
   }).filter(Boolean);
@@ -1226,7 +1327,7 @@ function bandRecords(pts,px,Y,b){
     const fx=px(rec[0]), fy=Y(rec[0].y), flip=fx>b.pL+b.pw-130;
     s+=`<text class="bandlab" x="${(fx+(flip?-8:0)).toFixed(1)}" y="${(fy-12).toFixed(1)}" text-anchor="${flip?'end':'start'}" style="fill:${band.col}">${band.label}</text>`;
   });
-  s+=`<text class="guidelab" x="${(b.pL+8).toFixed(1)}" y="${(b.pT+12).toFixed(1)}">most efficient model to date, within each performance tier</text>`;
+  s+=`<text class="guidelab" x="${(b.pL+8).toFixed(1)}" y="${(b.pT+b.ph-8).toFixed(1)}">most efficient model to date, within each performance tier</text>`;
   return {svg:s,records};
 }
 function logTicks(lo,hi){const t=[];const a=Math.floor(Math.log10(lo)),b=Math.ceil(Math.log10(hi));
@@ -1278,7 +1379,7 @@ function renderChart(){
 function drawChart(){
   const U=M().unit, w=WL[wkey()];
   $("#chTitle").textContent=`${state.metric==="energy"?"Energy":"Carbon"} vs ${XN[state.chX]}`;
-  $("#chSub").textContent=`${w.use_case} · ${w.tier.toLowerCase()} session · central estimate`;
+  $("#chSub").textContent=`${w.use_case} · ${w.tier.toLowerCase()} session · central estimate${asmTag()}`;
   const pts=chartPts();
   $("#chCount").textContent=`${pts.length} models`;
   const W=840,H=500,pL=68,pR=26,pT=22,pB=56, pw=W-pL-pR, ph=H-pT-pB;
@@ -1431,7 +1532,7 @@ function cmpCard(a,b,ctx){
       <div class="cmp-mval">${fmt(o.x.v)}${o.x.sd!=null?" ± "+fmt(o.x.sd):""}<span class="u">${U}</span></div>
       <div class="cmp-mbar"><div class="cmp-mband grow-x" style="left:${l.toFixed(1)}%;width:${ww.toFixed(1)}%"></div><div class="cmp-mmean" style="left:${mk.toFixed(1)}%"></div></div></div>`;};
   return `<div class="cmp-card" id="cmp-card">
-    <div class="cmp-top">${LOGO_HTML}<div class="cmp-eyebrow">AI inference · ${state.metric}<br>${ctx}</div></div>
+    <div class="cmp-top">${LOGO_HTML}<div class="cmp-eyebrow">AI inference · ${state.metric}<br>${ctx}${asmTag()}</div></div>
     <div class="cmp-verdict"><div class="cmp-big ${cls}">${hero}</div><div class="vsub">${sub}</div>
       <div class="cmp-mult">${fmt(a.x.v)} → ${fmt(b.x.v)} ${U}</div></div>
     <div class="cmp-models">${row(a,!ov&&!up)}${row(b,!ov&&up)}</div>
@@ -1510,10 +1611,11 @@ function wireList() {
   });
 }
 $("#mword").addEventListener("click",()=>{const w=$("#mword");w.classList.add("swap");
+  closeAsm();
   setTimeout(()=>{state.metric=state.metric==="energy"?"carbon":"energy";render();w.classList.remove("swap");},200);});
 $("#mtog").addEventListener("click",e=>{const b=e.target.closest("button[data-metric]");
   if(!b||b.dataset.metric===state.metric)return;
-  const w=$("#mword");w.classList.add("swap");
+  const w=$("#mword");w.classList.add("swap"); closeAsm();
   setTimeout(()=>{state.metric=b.dataset.metric;render();w.classList.remove("swap");},200);});
 function initProviders(){const provs=[...new Set(MODELS.map(m=>m.provider))].sort(),wrap=$("#prov-chips");wrap.replaceChildren();
   const mk=(v,l,on)=>{const b=document.createElement("button");b.className="chip";b.dataset.prov=v;
@@ -1531,6 +1633,88 @@ $("#showOpen").addEventListener("click",e=>{state.showOpen=!state.showOpen;
   e.currentTarget.setAttribute("aria-pressed",state.showOpen);state.open=null;render();});
 let st;$("#search").addEventListener("input",e=>{const v=e.target.value;clearTimeout(st);
   st=setTimeout(()=>{state.q=v;render();},170);});
+
+/* ---------- assumption control UI ---------- */
+const ASMCFG={
+  energy:{key:"pue", label:"PUE", unit:"", title:"Data center efficiency (PUE)",
+    desc:"Power usage effectiveness: total facility power ÷ IT power. Lower means less energy lost to cooling and power distribution.",
+    min:1.05, step:0.01, dp:2,
+    defLabel:"US-average data center",
+    presets:[{v:1.10,l:"Leading hyperscale",a:"≈"},{v:1.25,l:"Efficient colocation",a:"≈"}],
+    note:()=>`Changes the <b>cooling &amp; power distribution</b> component only. Carries through to carbon, since operational emissions scale with facility energy.`},
+  carbon:{key:"ci", label:"Grid", unit:"gCO₂e/kWh", title:"Electricity carbon intensity",
+    desc:"Emissions per kWh of electricity supplied to the data center. Depends on the grid region and any on-site or contracted generation.",
+    min:0, step:5, dp:0,
+    defLabel:"Behind-the-meter gas",
+    presets:[{v:25,l:"Wind / solar",a:"≈"},{v:250,l:"EU grid",a:"≈"},{v:380,l:"US grid",a:"≈"}],
+    note:()=>`Changes <b>operational</b> emissions only; embodied hardware and construction stay fixed. Using PUE <b>${state.pue.toFixed(2)}</b>${state.pue!==ASM.pue?"":" (default)"} · <span class="asm-link"><button type="button" id="asmGoPue">adjust in Energy</button></span>`}
+};
+const CHEV=`<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>`;
+function asmTag(){
+  if(isDefault()) return "";
+  const t=[];
+  if(state.pue!==ASM.pue) t.push(`PUE ${state.pue.toFixed(2)}`);
+  if(state.metric==="carbon"&&state.ci!==ASM.ci) t.push(`${state.ci} gCO₂e/kWh`);
+  return t.length?" · "+t.join(" · "):"";
+}
+function renderAsmButton(){
+  const c=ASMCFG[state.metric], btn=$("#asmBtn"); if(!c||!btn) return;
+  const v=state[c.key], def=ASM[c.key], isDef=Math.abs(v-def)<1e-9;
+  btn.innerHTML=`<span class="asm-dot${isDef?" def":""}" aria-hidden="true"></span><span class="asm-k">${c.label}</span>`+
+    `<span class="asm-v">${v.toFixed(c.dp)}</span>${c.unit?`<span class="asm-u">${c.unit}</span>`:""}${CHEV}`;
+  btn.title=isDef?`Default: ${c.defLabel}. Click to adjust.`:`Adjusted from default ${def.toFixed(c.dp)}. Click to change.`;
+  btn.setAttribute("aria-label",`${c.title}: ${v.toFixed(c.dp)} ${c.unit}${isDef?" (default)":""}`);
+}
+let asmRaf=0;
+function setAsm(key,v){
+  const c=ASMCFG[state.metric], max=ASM[key];
+  v=Math.max(c.min,Math.min(max,+v));
+  if(!Number.isFinite(v)) return;
+  state[key]=+v.toFixed(c.dp);
+  syncAsmPop();
+  cancelAnimationFrame(asmRaf); asmRaf=requestAnimationFrame(render);
+}
+function buildAsmPop(){
+  const c=ASMCFG[state.metric], def=ASM[c.key], pop=$("#asmPop");
+  pop.innerHTML=`<p class="asm-h">${c.title}</p><p class="asm-d">${c.desc}</p>
+    <div class="asm-val"><input id="asmIn" type="number" inputmode="decimal" min="${c.min}" max="${def}" step="${c.step}" aria-label="${c.title}">
+      ${c.unit?`<span class="u">${c.unit}</span>`:""}<span class="delta" id="asmDelta"></span></div>
+    <div class="asm-track"><input class="slider" id="asmRange" type="range" min="${c.min}" max="${def}" step="${c.step}" aria-label="${c.title}"></div>
+    <div class="asm-ends"><span>${c.min.toFixed(c.dp)}</span><span class="def">${def.toFixed(c.dp)} · default · ${c.defLabel}</span></div>
+    <div class="asm-presets" id="asmPresets">${c.presets.map(p=>`<button class="chip" type="button" data-v="${p.v}">${p.l}<small>${p.a}${p.v.toFixed(c.dp)}</small></button>`).join("")}
+      <button class="chip" type="button" data-v="${def}">Default<small>${def.toFixed(c.dp)}</small></button></div>
+    <div class="asm-note">${c.note()}</div>
+    <div class="asm-foot"><button class="asm-reset" id="asmReset" type="button">↺ Reset to default</button>
+      <span class="asm-link">applies to every view</span></div>`;
+  $("#asmRange").addEventListener("input",e=>setAsm(c.key,e.target.value));
+  $("#asmIn").addEventListener("change",e=>setAsm(c.key,e.target.value));
+  $("#asmIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();setAsm(c.key,e.target.value);e.target.blur();}});
+  $("#asmPresets").addEventListener("click",e=>{const b=e.target.closest("button[data-v]"); if(b) setAsm(c.key,b.dataset.v);});
+  $("#asmReset").addEventListener("click",()=>setAsm(c.key,def));
+  const go=$("#asmGoPue"); if(go) go.addEventListener("click",()=>{closeAsm();
+    state.metric="energy"; render(); setTimeout(openAsm,60);});
+  syncAsmPop();
+}
+function syncAsmPop(){
+  const c=ASMCFG[state.metric], v=state[c.key], def=ASM[c.key], r=$("#asmRange"); if(!r) return;
+  r.value=v; r.style.setProperty("--p",((v-c.min)/(def-c.min)*100)+"%");
+  const inp=$("#asmIn"); if(document.activeElement!==inp) inp.value=v.toFixed(c.dp);
+  // effect on this view's metric, relative to the default scenario
+  let f;
+  if(state.metric==="energy") f=state.pue/ASM.pue;
+  else f=null;
+  const d=$("#asmDelta");
+  if(Math.abs(v-def)<1e-9) d.innerHTML="default";
+  else if(f!=null) d.innerHTML=`energy <b>−${Math.round((1-f)*100)}%</b>`;
+  else d.innerHTML=`operational <b>−${Math.round((1-state.ci*state.pue/(ASM.ci*ASM.pue))*100)}%</b>`;
+  $("#asmPresets").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",Math.abs(+b.dataset.v-v)<1e-9));
+  $("#asmReset").disabled=Math.abs(v-def)<1e-9;
+}
+function openAsm(){ state.asmOpen=true; buildAsmPop(); $("#asmPop").classList.add("on"); $("#asmBtn").setAttribute("aria-expanded","true"); }
+function closeAsm(){ state.asmOpen=false; $("#asmPop").classList.remove("on"); $("#asmBtn").setAttribute("aria-expanded","false"); }
+$("#asmBtn").addEventListener("click",e=>{e.stopPropagation(); state.asmOpen?closeAsm():openAsm();});
+document.addEventListener("click",e=>{ if(state.asmOpen&&!e.target.closest("#assume")) closeAsm(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&state.asmOpen){ closeAsm(); $("#asmBtn").focus(); } });
 function setView(v){state.view=v;state.open=null;
   $("#vList").setAttribute("aria-pressed",v==="list");
   $("#vChart").setAttribute("aria-pressed",v==="chart");

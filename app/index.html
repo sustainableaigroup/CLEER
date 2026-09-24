@@ -287,6 +287,12 @@
   .ch-sub{font-family:var(--mono); font-size:10.5px; color:var(--faint); margin-top:4px;}
   .ch-count{font-family:var(--mono); font-size:10.5px; color:var(--faint); white-space:nowrap;}
   svg.chart{width:100%; height:auto; display:block;}
+  svg.chart .guide{stroke:#9ab3b8; stroke-width:1; stroke-dasharray:2 4;}
+  svg.chart .guidelab{font-family:var(--mono); font-size:9.5px; fill:var(--muted);
+    paint-order:stroke fill; stroke:#fff; stroke-width:3px; stroke-linejoin:round;}
+  svg.chart .band{fill:none; stroke-width:1.6; stroke-dasharray:5 4;}
+  svg.chart .bandlab{font-family:var(--mono); font-size:10px;
+    paint-order:stroke fill; stroke:#fff; stroke-width:3px; stroke-linejoin:round;}
   svg.chart .grid{stroke:#eef0e6;}
   svg.chart .axline{stroke:#dcdfd2;}
   svg.chart .tick{font-family:var(--mono); font-size:10px; fill:var(--faint);}
@@ -1162,6 +1168,66 @@ function frontier(pts){
   // Keep frontier points in ascending-x order for drawing/labeling regardless of scan direction.
   return out.sort((a,b)=>a.x-b.x);
 }
+/* Cost axis: diagonal guides of constant energy (or carbon) per dollar */
+function costGuides(pts,X,Y,b){
+  const U=M().unit;
+  const ratios=pts.map(p=>p.y/p.x).filter(r=>r>0&&Number.isFinite(r));
+  if(!ratios.length) return "";
+  const e0=Math.floor(Math.log10(Math.min(...ratios)));
+  const e1=Math.ceil(Math.log10(Math.max(...ratios)));
+  const step=Math.max(1,Math.ceil((e1-e0+1)/5));           // at most ~5 lines
+  const fmtK=k=>k>=1?k.toLocaleString("en-US"):String(+k.toPrecision(1));
+  let s=`<defs><clipPath id="plotClip"><rect x="${b.pL}" y="${b.pT}" width="${b.pw}" height="${b.ph}"/></clipPath></defs>`;
+  let lines="", labs="";
+  for(let e=e0;e<=e1;e+=step){
+    const k=Math.pow(10,e), xa=Math.max(b.x0,1e-9), xb=b.x1;
+    lines+=`<line class="guide" x1="${X(xa).toFixed(1)}" y1="${Y(k*xa).toFixed(1)}" x2="${X(xb).toFixed(1)}" y2="${Y(k*xb).toFixed(1)}"/>`;
+    // label where the line leaves the plot: top edge, else right edge
+    const xTop=b.y1/k;
+    if(xTop>=xa&&xTop<=xb){
+      labs+=`<text class="guidelab" x="${(X(xTop)+4).toFixed(1)}" y="${(b.pT+12).toFixed(1)}">${fmtK(k)} ${U}/$</text>`;
+    }else{
+      const yr=Y(k*xb);
+      if(yr>=b.pT&&yr<=b.pT+b.ph)
+        labs+=`<text class="guidelab" x="${(b.pL+b.pw-4).toFixed(1)}" y="${(yr-5).toFixed(1)}" text-anchor="end">${fmtK(k)} ${U}/$</text>`;
+    }
+  }
+  s+=`<g clip-path="url(#plotClip)">${lines}</g>${labs}`;
+  s+=`<text class="guidelab" x="${(b.pL+b.pw-8).toFixed(1)}" y="${(b.pT+b.ph-8).toFixed(1)}" text-anchor="end">lines = constant ${U} per dollar · prices include margin, not only compute</text>`;
+  return s;
+}
+
+/* Release axis: "most efficient to date" staircase per capability band */
+const BANDS=[
+  {lo:-Infinity,hi:20,label:"AAII < 20",  col:"#8FBFC3"},
+  {lo:20,       hi:35,label:"AAII 20–35", col:"#4B9DA3"},
+  {lo:35,       hi:Infinity,label:"AAII 35+",col:"#033845"}
+];
+function bandRecords(pts,px,Y,b){
+  let s="", records=[];
+  const xEnd=b.pL+b.pw;
+  BANDS.forEach(band=>{
+    const inBand=pts.filter(p=>p.m.intel!=null&&p.m.intel>=band.lo&&p.m.intel<band.hi)
+                    .sort((a,c)=>a.x-c.x);
+    const rec=[]; let best=Infinity;
+    inBand.forEach(p=>{ if(p.y<best-1e-12){ best=p.y; rec.push(p); } });
+    if(!rec.length) return;
+    records=records.concat(rec);
+    const path=[];
+    rec.forEach((p,i)=>{
+      const y=Y(p.y);
+      path.push(`${px(p).toFixed(1)},${y.toFixed(1)}`);
+      const nx=rec[i+1];
+      if(nx) path.push(`${px(nx).toFixed(1)},${y.toFixed(1)}`);   // step across, then down
+    });
+    const ly=Y(rec[rec.length-1].y);
+    path.push(`${xEnd.toFixed(1)},${ly.toFixed(1)}`);             // extend current record to today
+    s+=`<polyline class="band" style="stroke:${band.col}" points="${path.join(" ")}"/>`;
+    s+=`<text class="bandlab" x="${(xEnd-4).toFixed(1)}" y="${(ly-6).toFixed(1)}" text-anchor="end" style="fill:${band.col}">${band.label}</text>`;
+  });
+  s+=`<text class="guidelab" x="${(b.pL+8).toFixed(1)}" y="${(b.pT+12).toFixed(1)}">most efficient model to date, within each capability band</text>`;
+  return {svg:s,records};
+}
 function logTicks(lo,hi){const t=[];const a=Math.floor(Math.log10(lo)),b=Math.ceil(Math.log10(hi));
   for(let e=a;e<=b;e++)for(const m of[1,2,5]){const v=m*Math.pow(10,e); if(v>=lo*0.95&&v<=hi*1.05)t.push(v);}
   return t.length>8?t.filter((_,i)=>i%2===0):t;}
@@ -1191,7 +1257,10 @@ function renderChart(){
         <button class="chip" data-c="kind" aria-pressed="${state.chColour==='kind'}">Open / closed</button>
       </div></div>
       <div class="pgrp"><span class="plab">Display</span>
-        <label class="sw"><input type="checkbox" id="swFront" ${state.chFront?"checked":""}> Efficiency frontier</label>
+        <label class="sw"><input type="checkbox" id="swFront" ${state.chFront?"checked":""}> ${
+          {intel:"Efficiency frontier",
+           cost:(state.metric==="energy"?"Energy":"Carbon")+" per $ guides",
+           release:"Records by capability"}[state.chX]}</label>
         <label class="sw"><input type="checkbox" id="swLog" ${state.chLog?"checked":""}> Log scale</label>
       </div>
       <button class="dl" id="dl">⤓ Download image</button>
@@ -1242,15 +1311,20 @@ function drawChart(){
   if(state.chX==="release") pts.forEach(p=>{(jit[p.rel]=jit[p.rel]||[]).push(p);});
   const px=p=>{if(state.chX!=="release")return X(p.x);
     const g=jit[p.rel],i=g.indexOf(p),n=g.length; return X(p.x)+(n>1?(i-(n-1)/2)*5.2:0);};
-  const fr=state.chFront?frontier(pts):[];
-  if(fr.length>1){
-    s+= state.chX==="release"
-      ? `<polyline class="front" points="${fr.map((p,i)=>{const a=`${px(p).toFixed(1)},${Y(p.y).toFixed(1)}`;
-          const nx=fr[i+1]; return nx?`${a} ${px(nx).toFixed(1)},${Y(p.y).toFixed(1)}`:a;}).join(" ")}"/>`
-      : `<polyline class="front" points="${fr.map(p=>`${px(p).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ")}"/>`;
-    const f0=fr[0];
-    s+=`<text class="frontlab" x="${(px(f0)+9).toFixed(1)}" y="${(Y(f0.y)-20).toFixed(1)}">${
-      state.chX==="release"?"most efficient to date":"efficiency frontier"}</text>`;
+  const overlay=state.chFront;
+  let fr=[];
+  if(overlay&&state.chX==="intel"){
+    fr=frontier(pts);
+    if(fr.length>1){
+      s+=`<polyline class="front" points="${fr.map(p=>`${px(p).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ")}"/>`;
+      const f0=fr[0];
+      s+=`<text class="frontlab" x="${(px(f0)+9).toFixed(1)}" y="${(Y(f0.y)-20).toFixed(1)}">efficiency frontier</text>`;
+    }
+  }
+  if(overlay&&state.chX==="cost") s+=costGuides(pts,X,Y,{x0,x1,y0,y1,pL,pT,pw,ph});
+  if(overlay&&state.chX==="release"){
+    const r=bandRecords(pts,px,Y,{pL,pT,pw,ph});
+    s+=r.svg; fr=r.records;                                        // enlarges record-setting dots
   }
   pts.forEach((p,idx)=>{
     const on=fr.includes(p), col=state.chColour==="provider"?(PROVC[p.m.provider]||"#888"):KINDC[p.m.kind];
@@ -1259,14 +1333,13 @@ function drawChart(){
       ? `<circle data-i="${idx}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${on?6:4.8}" fill="#fff" stroke="${col}" stroke-width="2.1"/>`
       : `<circle data-i="${idx}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${on?5.8:4.4}" fill="${col}" stroke="#fff" stroke-width="1.3"/>`;
   });
-  if(state.chFront){
+  if(overlay&&state.chX==="intel"){
     let lastX=-Infinity, lastY=-Infinity, toggle=false;
     fr.forEach(p=>{
       const x=px(p), y=Y(p.y), flip=x>W-190;
-      let dy = state.chX==="release" ? -13 : 3.5;
-      const crowded = Math.abs(x-lastX)<95 && Math.abs(y-lastY)<22;
-      if(crowded){ toggle=!toggle; dy = toggle ? -15 : 15; }
-      else{ toggle=false; }
+      let dy=3.5;
+      const crowded=Math.abs(x-lastX)<95&&Math.abs(y-lastY)<22;
+      if(crowded){ toggle=!toggle; dy=toggle?-15:15; } else { toggle=false; }
       lastX=x; lastY=y;
       s+=`<text class="lab" x="${(x+(flip?-10:10)).toFixed(1)}" y="${(y+dy).toFixed(1)}" text-anchor="${flip?'end':'start'}">${p.m.name}</text>`;
     });

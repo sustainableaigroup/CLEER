@@ -302,6 +302,7 @@
   svg.chart .front{fill:none; stroke:#033845; stroke-width:1.4; stroke-dasharray:5 4;}
   svg.chart .frontlab{font-family:var(--mono); font-size:10px; fill:var(--teal);
     paint-order:stroke fill; stroke:#fff; stroke-width:3px; stroke-linejoin:round;}
+  svg.chart .label-leader{stroke:var(--faint); stroke-width:.8; opacity:.75; pointer-events:none;}
   svg.chart circle{cursor:pointer;}
   .ch-legend{display:flex; flex-wrap:wrap; gap:7px 15px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line);}
   .lg{font-family:var(--mono); font-size:10.5px; color:var(--muted); display:inline-flex; align-items:center; gap:6px;}
@@ -1417,8 +1418,7 @@ function drawChart(){
     fr=frontier(pts);
     if(fr.length>1){
       s+=`<polyline class="front" points="${fr.map(p=>`${px(p).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ")}"/>`;
-      const f0=fr[0];
-      s+=`<text class="frontlab" x="${(px(f0)+9).toFixed(1)}" y="${(Y(f0.y)-20).toFixed(1)}">efficiency frontier</text>`;
+      s+=`<text class="frontlab" x="${pL+10}" y="${pT+ph-12}">efficiency frontier</text>`;
     }
   }
   if(overlay&&state.chX==="cost") s+=costGuides(pts,X,Y,{x0,x1,y0,y1,pL,pT,pw,ph});
@@ -1434,14 +1434,39 @@ function drawChart(){
       : `<circle data-i="${idx}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${on?5.8:4.4}" fill="${col}" stroke="#fff" stroke-width="1.3"/>`;
   });
   if(overlay&&state.chX==="intel"){
-    let lastX=-Infinity, lastY=-Infinity, toggle=false;
+    const placed=[];
+    const candidates=[
+      {dx:18,dy:-18,anchor:"start"}, {dx:18,dy:25,anchor:"start"},
+      {dx:-18,dy:-18,anchor:"end"}, {dx:-18,dy:25,anchor:"end"},
+      {dx:30,dy:4,anchor:"start"}, {dx:-30,dy:4,anchor:"end"},
+      {dx:18,dy:-35,anchor:"start"}, {dx:18,dy:42,anchor:"start"},
+      {dx:-18,dy:-35,anchor:"end"}, {dx:-18,dy:42,anchor:"end"}
+    ];
     fr.forEach(p=>{
-      const x=px(p), y=Y(p.y), flip=x>W-190;
-      let dy=3.5;
-      const crowded=Math.abs(x-lastX)<95&&Math.abs(y-lastY)<22;
-      if(crowded){ toggle=!toggle; dy=toggle?-15:15; } else { toggle=false; }
-      lastX=x; lastY=y;
-      s+=`<text class="lab" x="${(x+(flip?-10:10)).toFixed(1)}" y="${(y+dy).toFixed(1)}" text-anchor="${flip?'end':'start'}">${p.m.name}</text>`;
+      const x=px(p), y=Y(p.y), width=p.m.name.length*6.3+5;
+      const choices=candidates.map((c,i)=>{
+        const tx=x+c.dx, ty=y+c.dy;
+        const left=c.anchor==="start"?tx:tx-width;
+        const box={left,right:left+width,top:ty-11,bottom:ty+3};
+        const outside=Math.max(0,pL+4-box.left)+Math.max(0,box.right-(pL+pw-4))
+          +Math.max(0,pT+4-box.top)+Math.max(0,box.bottom-(pT+ph-4));
+        const overlap=placed.reduce((sum,b)=>sum+
+          Math.max(0,Math.min(box.right,b.right)-Math.max(box.left,b.left))*
+          Math.max(0,Math.min(box.bottom,b.bottom)-Math.max(box.top,b.top)),0);
+        const nearDots=pts.reduce((sum,q)=>{
+          if(q===p)return sum;
+          const qx=px(q), qy=Y(q.y);
+          return sum+(qx>box.left-7&&qx<box.right+7&&qy>box.top-7&&qy<box.bottom+7?1:0);
+        },0);
+        return {c,tx,ty,box,score:outside*100+overlap*10+nearDots*100+i};
+      });
+      const best=choices.reduce((a,b)=>b.score<a.score?b:a);
+      placed.push(best.box);
+      const ex=best.tx+(best.c.anchor==="start"?-4:4);
+      const ey=best.ty-4;
+      const vx=ex-x, vy=ey-y, length=Math.hypot(vx,vy)||1;
+      s+=`<line class="label-leader" x1="${(x+vx*7/length).toFixed(1)}" y1="${(y+vy*7/length).toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}"/>`;
+      s+=`<text class="lab" x="${best.tx.toFixed(1)}" y="${best.ty.toFixed(1)}" text-anchor="${best.c.anchor}">${p.m.name}</text>`;
     });
   }
   svg.innerHTML=s;

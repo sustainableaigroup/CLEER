@@ -1580,7 +1580,15 @@ async function shareImg(id, name) {
       scale: 2,
       backgroundColor: "#ffffff",
       useCORS: true,
-      logging: false
+      logging: false,
+      // html2canvas renders a cloned DOM, which restarts the .grow-x bar animation;
+      // freeze it at its end state so exported bands match the on-screen widths.
+      onclone: doc => {
+        doc.querySelectorAll(".grow-x").forEach(n => {
+          n.style.animation = "none";
+          n.style.transform = "none";
+        });
+      }
     });
 
     canvas.toBlob(blob => {

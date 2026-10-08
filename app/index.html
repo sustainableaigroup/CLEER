@@ -659,7 +659,7 @@
        
           <b>Scenario default:</b> behind-the-meter gas generation at
           <b>640 gCO₂e/kWh</b>, combined with US-average data center assumptions for PUE (1.45). Both values can be toggled in the dashboard.
-          Learn more: <a href="#" target="_blank" rel="noopener noreferrer">Emissions Calculation →</a>
+          Learn more: <a href="https://reports.sustainableaigroup.com/ai-emissions" target="_blank" rel="noopener noreferrer">Emissions Calculation →</a>
         </p>
       </section>
     </div>
@@ -991,7 +991,7 @@ const meta = state.sortKey==="cost"?money(x.cost):(state.sortKey==="intel"?("AAI
       <span class="rchev">${open?'▴':'▾'}</span>
     </button>${open?detail(m,x):""}</div>`;
 }
-const METHLINK=`<div class="mlink">Factors and sources: <a href="https://reports.sustainableaigroup.com/ai-emissions” target="_blank" rel="noopener noreferrer">Closed AI Emissions Calculation-0926 ↗</a></div>`;
+const METHLINK=`<div class="mlink">Factors and sources: <a href="https://reports.sustainableaigroup.com/ai-emissions" target="_blank" rel="noopener noreferrer">Closed AI Emissions Calculation-0926 ↗</a></div>`;
 const FEED=`<div class="gated"><b>CLEER Feed</b>Per-token intensity factors for carbon accounting and engineering telemetry integration. API access coming soon. <a href="https://sustainableaigroup.com/#contact "target="_blank" rel="noopener noreferrer">Reach out →</a></div>`;
 const SCEN={
   energy:`<div class="scen"><b>CLEER estimates accelerator energy</b> for each model. The remaining components are added using defensible assumptions drawn from the latest research, standards, and established methodologies. PUE can be modified in the top right of the dashboard.</div>`,

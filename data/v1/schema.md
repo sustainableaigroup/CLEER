@@ -1,4 +1,4 @@
-# CLEER Dashboard Data — Schema v1.0.0
+# CLEER Dashboard Data — Schema v1.1.0
 
 Frozen contract for `/data/v1/models.json`. The dashboard and any external
 consumer bind to this shape. Breaking changes require `/v2/`; additive fields
@@ -25,8 +25,9 @@ defect — the build script fails on it.
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `schemaVersion` | string | Semver. `1.0.0`. |
-| `generatedAt` | string | `YYYY-MM-DD`. |
+| `schemaVersion` | string | Semver. `1.1.0`. |
+| `generatedAt` | string | `YYYY-MM-DD`. Date the payload was built (shown as "Dashboard updated"). |
+| `dataUpdated` | string | `YYYY-MM-DD`. Date of the current data release (shown as "Data updated"). Set by hand each quarter. |
 | `methodology.engine` | string | Energy estimation version, e.g. `CLEER-Text-0826`. |
 | `methodology.accounting` | string | Emissions methodology version. |
 | `methodology.capability_and_cost_source` | string | `Artificial Analysis`. |
@@ -62,7 +63,9 @@ Token counts behind each workload are **not** published.
 | `release_month` | string \| null | `YYYY-MM`. |
 | `selected_batch_size` | number \| null | Open models only. |
 | `proxies` | array | `{name, weight}`. Five entries for proxy-estimated models, empty otherwise. |
-| `results` | object | Keyed by workload. |
+| `verbosity_factor` | number \| null | Model's output tokens per task on the Artificial Analysis Intelligence Index, divided by the median across models with data. Null when no verbosity data exists (all open models, older closed models). |
+| `results` | object | Keyed by workload. Same token workload for every model. |
+| `results_verbosity_adjusted` | object \| null | Same shape as `results`, with each model's output tokens scaled by `verbosity_factor`. Input tokens unchanged. Null when `verbosity_factor` is null. Added in 1.1.0. |
 
 ### `results[workloadKey]`
 
@@ -82,5 +85,5 @@ Token counts behind each workload are **not** published.
 - **Nulls are meaningful.** A null SD means the quantity does not apply, not zero. Render nothing rather than a zero band.
 - **Components sum to totals** within floating-point tolerance (~1e-9 relative). Do not re-derive totals by summing.
 - **Confidence bands**: >0.85 strong, 0.55–0.85 good, 0.30–0.55 weaker, <0.30 extrapolated.
-- **One workload for every model.** Differences reflect the model, not usage. Verbosity is held constant.
+- **One workload for every model by default.** In `results`, differences reflect the model, not usage, and verbosity is held constant. `results_verbosity_adjusted` relaxes that for output tokens only.
 - **Figures are central estimates** under one documented scenario.

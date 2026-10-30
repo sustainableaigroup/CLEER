@@ -9,10 +9,12 @@ Run in CI on every PR. A non-zero exit blocks the deploy.
 """
 import sys, csv, json, math, hashlib, datetime, os, re
 
-SCHEMA = "1.0.0"
+SCHEMA = "1.1.0"
 ENGINE = "CLEER-Text-0926"
 ACCOUNTING = "Closed-AI-Emissions-Methodology-0926"
 AA_SNAPSHOT = "2026-09"
+DATA_UPDATED = "2026-09-29"   # date of the current data release; edit by hand each quarter
+VPREFIX = "vadj_"             # verbosity-adjusted copies of the result columns
 BATCHES = [32, 64, 128, 256, 384]
 OUT_DIR = os.path.join("data", "v1")
 
@@ -67,20 +69,49 @@ def main():
             "selected_batch_size": num(r.get("selected_batch_size")),
             "proxies": [{"name": r.get(f"proxy_{i}"), "weight": num(r.get(f"proxy_{i}_w"))}
                         for i in range(1, 6) if (r.get(f"proxy_{i}") or "").strip()],
-            "results": {}})
+            "verbosity_factor": None,
+            "results": {},
+            "results_verbosity_adjusted": {}})
 
         is_open = m["kind"] == "Open"
-        ec = [num(r.get(k)) for k in ("e_accelerator_wh", "e_host_wh", "e_idle_wh", "e_cooling_wh")]
-        cc = [num(r.get(k)) for k in ("c_operational_gco2e", "c_embodied_gco2e", "c_construction_gco2e")]
-        res = {
-            "energy_wh": {"mean": num(r.get("energy_wh_mean")),
-                          "sd": None if is_open else num(r.get("energy_wh_sd"))},
-            "carbon_gco2e": {"mean": num(r.get("carbon_gco2e_mean")),
-                             "sd": None if is_open else num(r.get("carbon_gco2e_sd"))},
-            "cost_usd": num(r.get("cost_usd")),
-            "energy_components_wh": dict(zip(("accelerator", "host", "idle", "cooling"), ec)),
-            "carbon_components_gco2e": dict(zip(("operational", "embodied", "construction"), cc)),
-        }
+
+        def result_block(p):
+            """Result object from the plain columns (p='') or the verbosity-adjusted ones (p='vadj_')."""
+            ec = [num(r.get(p + k)) for k in ("e_accelerator_wh", "e_host_wh", "e_idle_wh", "e_cooling_wh")]
+            cc = [num(r.get(p + k)) for k in ("c_operational_gco2e", "c_embodied_gco2e", "c_construction_gco2e")]
+            return {
+                "energy_wh": {"mean": num(r.get(p + "energy_wh_mean")),
+                              "sd": None if is_open else num(r.get(p + "energy_wh_sd"))},
+                "carbon_gco2e": {"mean": num(r.get(p + "carbon_gco2e_mean")),
+                                 "sd": None if is_open else num(r.get(p + "carbon_gco2e_sd"))},
+                "cost_usd": num(r.get(p + "cost_usd")),
+                "energy_components_wh": dict(zip(("accelerator", "host", "idle", "cooling"), ec)),
+                "carbon_components_gco2e": dict(zip(("operational", "embodied", "construction"), cc)),
+            }, ec, cc
+
+        res, ec, cc = result_block("")
+
+        # --- verbosity adjustment (optional; blank for models without AA verbosity data) ---
+        vf = num(r.get("verbosity_factor"))
+        if vf is not None:
+            if is_open: err(f"{nm} [{key}]: open model must not carry a verbosity adjustment")
+            if not 0.05 < vf < 20: err(f"{nm} [{key}]: verbosity_factor {vf} outside plausible range")
+            if m["verbosity_factor"] not in (None, vf):
+                err(f"{nm}: verbosity_factor differs between workloads")
+            m["verbosity_factor"] = vf
+            vres, vec, vcc = result_block(VPREFIX)
+            ve, vc = vres["energy_wh"]["mean"], vres["carbon_gco2e"]["mean"]
+            if ve is None or ve <= 0: err(f"{nm} [{key}]: verbosity-adjusted energy missing or non-positive")
+            if vc is None or vc <= 0: err(f"{nm} [{key}]: verbosity-adjusted carbon missing or non-positive")
+            if None in vec or None in vcc: err(f"{nm} [{key}]: verbosity-adjusted components missing")
+            elif ve and vc:
+                if not math.isclose(sum(vec), ve, rel_tol=1e-6, abs_tol=1e-7):
+                    err(f"{nm} [{key}]: verbosity-adjusted energy components {sum(vec):.6g} != total {ve:.6g}")
+                if not math.isclose(sum(vcc), vc, rel_tol=1e-6, abs_tol=1e-7):
+                    err(f"{nm} [{key}]: verbosity-adjusted carbon components {sum(vcc):.6g} != total {vc:.6g}")
+            m["results_verbosity_adjusted"][key] = vres
+        elif any(num(r.get(VPREFIX + k)) is not None for k in ("energy_wh_mean", "carbon_gco2e_mean")):
+            err(f"{nm} [{key}]: verbosity-adjusted values present without a verbosity_factor")
         if is_open:
             curve = [num(r.get(f"curve_b{b}_wh")) for b in BATCHES]
             if all(v is not None for v in curve):
@@ -122,6 +153,11 @@ def main():
             err(f"{m['name']}: open model must not publish a standard deviation")
         for f in ("intelligence_index", "release_month"):
             if m[f] in (None, ""): warn(f"{m['name']}: missing {f}")
+        if m["verbosity_factor"] is None:
+            if m["results_verbosity_adjusted"]: err(f"{m['name']}: adjusted results without a verbosity_factor")
+            m["results_verbosity_adjusted"] = None
+        elif len(m["results_verbosity_adjusted"]) != nwl:
+            err(f"{m['name']}: verbosity adjustment on {len(m['results_verbosity_adjusted'])} workloads, expected {nwl}")
 
     # --- IP guard on values -------------------------------------------------
     def walk(o):
@@ -145,6 +181,7 @@ def main():
     payload = {
         "schemaVersion": SCHEMA,
         "generatedAt": datetime.date.today().isoformat(),
+        "dataUpdated": DATA_UPDATED,
         "methodology": {"engine": ENGINE, "accounting": ACCOUNTING,
                         "capability_and_cost_source": "Artificial Analysis",
                         "capability_and_cost_snapshot": AA_SNAPSHOT},
@@ -159,16 +196,19 @@ def main():
     blob = json.dumps(payload, indent=2, ensure_ascii=False)
     with open(os.path.join(OUT_DIR, "models.json"), "w") as f: f.write(blob)
     meta = {"schemaVersion": SCHEMA, "generatedAt": payload["generatedAt"],
+            "dataUpdated": DATA_UPDATED,
             "methodology": payload["methodology"], "scenario": payload["scenario"],
             "counts": {"models": len(ml),
                        "closed": sum(1 for m in ml if m["kind"] == "Closed"),
                        "open": sum(1 for m in ml if m["kind"] == "Open"),
-                       "workloads": nwl},
+                       "workloads": nwl,
+                       "verbosity_adjusted": sum(1 for m in ml if m["verbosity_factor"] is not None)},
             "sha256": hashlib.sha256(blob.encode()).hexdigest(),
             "license": {"data": "CC BY-NC 4.0", "code": "Apache-2.0", "methodology": "CC BY 4.0"}}
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f: f.write(json.dumps(meta, indent=2))
 
-    print(f"OK — {len(ml)} models, {nwl} workloads, {len(rows)} rows")
+    print(f"OK — {len(ml)} models, {nwl} workloads, {len(rows)} rows, "
+          f"{meta['counts']['verbosity_adjusted']} with verbosity adjustment")
     print(f"   sha256 {meta['sha256'][:16]}…")
     if warnings:
         print(f"   {len(warnings)} warning(s):")

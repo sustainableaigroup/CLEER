@@ -1,13 +1,12 @@
 # CLEER Dashboard
 
-Public data and code for the [CLEER Dashboard](https://github.com/sustainableaigroup/CLEER) by
+Public data and code for the [CLEER Dashboard](https://cleerdash.sustainableaigroup.com/) by
 [Sustainable AI Group](https://sustainableaigroup.com/), which estimates the energy and carbon of
 AI inference for closed and open models. Methodology: [CLEER Technical Report](https://reports.sustainableaigroup.com/CLEER-Tech-Report).
 
 ## Changelog
-
-Newest first. Data releases follow the CLEER version (e.g. CLEER-Text-0926); dashboard
-features can ship between data releases.
+Data releases follow the CLEER version (e.g. CLEER-Text-0926) with quarterly updates; dashboard
+features may be updated between data releases.
 
 ### 2026-10-30 · Dashboard update
 - Added **Account for verbosity variation?** toggle. When on, each model's output tokens are
